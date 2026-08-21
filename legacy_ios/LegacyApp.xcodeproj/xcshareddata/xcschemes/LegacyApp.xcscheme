@@ -6,6 +6,24 @@
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES"
       runPostActionsOnFailure = "NO">
+      <PreActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "[Flutter] prebuild"
+               scriptText = "/bin/sh &quot;$FLUTTER_SWIFT_PACKAGE_OUTPUT/Scripts/flutter_integration.sh&quot; prebuild">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "401620B86336C368F014F4AF"
+                     BuildableName = "LegacyApp.app"
+                     BlueprintName = "LegacyApp"
+                     ReferencedContainer = "container:LegacyApp.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"

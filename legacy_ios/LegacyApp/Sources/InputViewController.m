@@ -1,5 +1,6 @@
 #import "InputViewController.h"
 #import "ConfirmViewController.h"
+#import "LegacyApp-Swift.h"
 
 static NSString *const kPrefsDraftName = @"draft_name";
 static NSString *const kPrefsDraftEmail = @"draft_email";
@@ -130,8 +131,10 @@ static NSString *const kPrefsDraftMessage = @"draft_message";
     data.email = self.emailField.text ?: @"";
     data.message = self.messageField.text ?: @"";
 
-    ConfirmViewController *confirmVC = [[ConfirmViewController alloc] init];
-    [self.navigationController pushViewController:confirmVC animated:YES];
+    // ガイド追試: Flutter画面を開く導線に差し替え
+    // ガイド追試: Flutter画面を開く導線に差し替え
+    UIViewController *flutterVC = [FlutterScreenLauncher viewControllerWithRoute:@"/confirm"];
+    [self.navigationController pushViewController:flutterVC animated:YES];
 }
 
 @end

@@ -4,6 +4,15 @@ options:
   developmentLanguage: ja
   deploymentTarget:
     iOS: "16.0"
+
+# ガイド「方式1: Swift Package Manager」の手順1（パッケージをXcodeに追加）に相当。
+# 生成物は legacyapp_flutter/build/ 配下（gitignore対象）にあるため、
+# チェックアウト直後は `flutter build swift-package --platform ios` を先に
+# 実行しておく必要がある。
+packages:
+  FlutterNativeIntegration:
+    path: ../legacyapp_flutter/build/ios/SwiftPackages/FlutterNativeIntegration
+
 targets:
   LegacyApp:
     type: application
@@ -13,6 +22,8 @@ targets:
       - path: LegacyApp/Resources
     dependencies:
       - sdk: libsqlite3.tbd
+      # 手順2: Frameworks, Libraries, and Embedded Content に追加
+      - package: FlutterNativeIntegration
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.legacyapp
@@ -22,6 +33,25 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        SWIFT_VERSION: "5.0"
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
+        # Objective-CからSwiftクラスを参照するための生成ヘッダー。
+        # XcodeGenで生成したプロジェクトでは既定で設定されないため明示する。
+        SWIFT_INSTALL_OBJC_HEADER: YES
+        SWIFT_OBJC_INTERFACE_HEADER_NAME: LegacyApp-Swift.h
+        SWIFT_OBJC_BRIDGING_HEADER: LegacyApp/Sources/LegacyApp-Bridging-Header.h
+        # 手順3: Build Settings
+        FLUTTER_SWIFT_PACKAGE_OUTPUT: $(SRCROOT)/../legacyapp_flutter/build/ios/SwiftPackages
+        # Xcodeからビルドするたびにflutterアプリを再ビルドさせるための設定
+        FLUTTER_APPLICATION_PATH: $(SRCROOT)/../legacyapp_flutter
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    # 手順5: Build Phases の Run Script（依存解析に基づかせない）
+    postCompileScripts:
+      - name: "[Flutter] assemble"
+        script: /bin/sh "$FLUTTER_SWIFT_PACKAGE_OUTPUT/Scripts/flutter_integration.sh" assemble
+        basedOnDependencyAnalysis: false
+        inputFileLists:
+          - $(FLUTTER_SWIFT_PACKAGE_OUTPUT)/Scripts/FlutterAssembleInputs.xcfilelist
     info:
       path: Generated-Info.plist
       properties:
@@ -39,6 +69,11 @@ schemes:
     build:
       targets:
         LegacyApp: all
+      # 手順4: Scheme の Pre-action
+      preActions:
+        - name: "[Flutter] prebuild"
+          script: /bin/sh "$FLUTTER_SWIFT_PACKAGE_OUTPUT/Scripts/flutter_integration.sh" prebuild
+          settingsTarget: LegacyApp
     run:
       config: Debug
     archive:

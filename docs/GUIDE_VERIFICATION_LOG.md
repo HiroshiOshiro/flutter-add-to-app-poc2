@@ -397,3 +397,163 @@ adb: failed to install app-debug.apk:
 | スニペットの言語 | **ガイドに不足**（Kotlinのみ／有効化手順が無い） |
 | 初期ルートの分割（E） | **ガイドは正しい**。症状（戻る矢印）を追記すべき |
 | AppBarの二重表示（F） | **ガイドが誤り**。`FlutterActivity` では再現しない |
+
+---
+
+## Step 4: ガイド「5. ステップ2-B: iOSへ組み込む」（Swift Package Manager）
+
+### 4-1. パッケージの生成
+
+```
+$ flutter build swift-package --platform ios
+```
+
+**1回目は失敗した。** `frontend_server` の kernel コンパイルで例外が出て
+`The App.xcframework build failed.` で終了。2回目は同じコマンドで成功した。
+Flutter 3.41.2 時代の `.dart_tool` が残っていたことが原因と思われるが、
+確証は無い。**再実行で直るため、ガイドに「1回目が失敗したら再実行」と
+書くのは適切でない。** 事象として記録するにとどめる。
+
+生成物:
+
+```
+build/ios/SwiftPackages/
+  FlutterNativeIntegration/    Package.swift, Sources, FlutterPluginRegistrant, FlutterNativeTools
+  Scripts/                     flutter_integration.sh, FlutterAssembleInputs.xcfilelist,
+                               flutter_lldbinit, flutter_lldb_helper.py
+```
+
+**判定: ガイドに不足あり。** 出力先が `build/` 配下、つまり
+**バージョン管理対象外**である点が書かれていない。チェックアウト直後や CI では
+Xcodeを開く前に `flutter build swift-package` を実行しておく必要がある。
+Androidの source module が `.android/` を `flutter pub get` で自動生成するのと
+違い、**iOSは明示的なコマンドが前提になる**。
+
+### 4-2. Xcode の6手順を XcodeGen に落とす（検証点G）
+
+ガイドはXcodeのGUI操作で書かれている。XcodeGenの `project.yml` で表現できた。
+
+| ガイドの手順 | XcodeGen での書き方 |
+|---|---|
+| 1. パッケージを追加 | `packages:` に `path:` でローカルパッケージを定義 |
+| 2. Frameworks に追加 | target の `dependencies: - package: FlutterNativeIntegration` |
+| 3. `FLUTTER_SWIFT_PACKAGE_OUTPUT` | `settings.base` |
+| 4. Scheme の Pre-action | `schemes.<name>.build.preActions`（`settingsTarget` の指定が要る） |
+| 5. Run Script + 入力リスト | `postCompileScripts` に `basedOnDependencyAnalysis: false` と `inputFileLists` |
+
+**判定: 全6手順を表現できた。ガイドに追記する価値が高い。**
+プロジェクト生成ツールを使っているとGUI手順は毎回消えるため、
+この対応表が無いとSPM方式は採用できない。
+
+この状態でビルドは通った（`** BUILD SUCCEEDED **`）。
+
+### 4-3. iOS側にもコードのスニペットが無い
+
+ガイドのiOSの節は
+
+> `FlutterViewController` を表示する。エンジンをどう用意するかはAndroidと同じ
+> 選択になる。
+
+としか書いておらず、**コードが1行も無い**。Androidと同様、公式APIから自分で
+書いた。
+
+```swift
+private static let engineGroup = FlutterEngineGroup(name: "...", project: nil)
+
+let engine = engineGroup.makeEngine(withEntrypoint: nil, libraryURI: nil,
+                                    initialRoute: route)
+GeneratedPluginRegistrant.register(with: engine)
+return FlutterViewController(engine: engine, nibName: nil, bundle: nil)
+```
+
+**判定: ガイドに不足あり。**
+
+### 4-4. import するモジュール名がガイドから分からない
+
+最初 `import FlutterNativeIntegration` と書いたところ
+
+```
+error: cannot find 'FlutterEngineGroup' in scope
+```
+
+`FlutterNativeIntegration` は**中身が空のシム**（`Generated file. Do not edit.`
+の1ファイルのみ）で、Flutter本体は別モジュールだった。パッケージ構成は
+
+```
+FlutterNativeIntegration
+  └── FlutterPluginRegistrant
+        └── FlutterFramework
+              └── Flutter （Flutter.xcframework のバイナリターゲット）
+```
+
+正しくは次の2つをimportする。
+
+```swift
+import Flutter
+import FlutterPluginRegistrant
+```
+
+**判定: ガイドに不足あり。** SPM方式で何をimportするかは、パッケージの中身を
+開かないと分からない。ガイドに明記すべき。
+
+### 4-5. Objective-CからSwiftを呼べない（ガイドの記述が誤り）
+
+ガイドは9節でこう書いている。
+
+> **iOS** — Objective-CからSwiftを参照するには自動生成される
+> `<ProductModuleName>-Swift.h` をimportする。逆向きにはBridging Headerが要る。
+
+その通りに `LegacyApp-Swift.h` をimportしたが、
+
+```
+error: use of undeclared identifier 'FlutterScreenLauncher'
+```
+
+生成された `LegacyApp-Swift.h` を確認すると **`@interface` が0個**で、
+`@objc final class` が1つも書き出されていなかった。
+
+切り分けた結果:
+
+| 条件 | `internal` な `@objc` クラスがヘッダーに出るか |
+|---|---|
+| Bridging Header なし | **出ない**（`public` にすれば出る） |
+| Bridging Header あり | **出る** |
+
+**判定: ガイドが誤り。** 「逆向き（Swift→ObjC）にはBridging Headerが要る」と
+書いているが、実際には **Objective-CからSwiftを参照する場合にも
+Bridging Header が要る**（あるいはSwift側を `public` にする）。
+Bridging Header の有無が `-Swift.h` の生成内容を変える、という点を明記する
+必要がある。
+
+なお `SWIFT_INSTALL_OBJC_HEADER` と `SWIFT_OBJC_INTERFACE_HEADER_NAME` も
+XcodeGen では既定で設定されないため明示した（これらだけでは解決しなかった）。
+
+### 4-6. 切り分け中に自分が踏んだ罠
+
+`find ~/Library/Developer/Xcode/DerivedData/LegacyApp-*/... -name LegacyApp-Swift.h`
+で調べていたが、**同名アプリのDerivedDataが3つあり、別プロジェクトのヘッダーを
+見ていた**。原因の切り分けが大きく遠回りになった。
+
+```
+LegacyApp-eygkyypmryjqgibyedwhbjlrrpyt  ← 別ブランチのビルド
+LegacyApp-doajzcouvlglvrawxlwouxmcsbrx  ← 先行リポジトリのビルド
+LegacyApp-gltssbxcgbmvmbedofeypgocokqh  ← 今回のもの
+```
+
+`xcodebuild -showBuildSettings` の `BUILD_DIR` で対象を確定してから見る。
+
+### 4-7. 到達点
+
+シミュレータで、ネイティブの入力画面 →「Next」→ Flutter画面
+（`route: /confirm`）→ 戻る操作でネイティブに復帰、まで確認した。
+Androidと同じ到達点。
+
+### Step 4 のまとめ
+
+| 検証点 | 結果 |
+|---|---|
+| SPMパッケージの生成 | OK（ただし出力先が `build/` 配下である点が未記載） |
+| Xcodeの6手順 → XcodeGen（G） | **全て表現できた。対応表をガイドに追記すべき** |
+| iOS側のコードスニペット | **ガイドに不足**（1行も無い） |
+| importするモジュール名 | **ガイドに不足**（`Flutter` と `FlutterPluginRegistrant`） |
+| ObjC→Swiftの参照 | **ガイドが誤り**（Bridging Header か `public` が必要） |
