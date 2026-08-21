@@ -48,6 +48,7 @@ class MainApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       initialRoute: initialRoute,
+      onGenerateInitialRoutes: router.onGenerateInitialRoutes,
       onGenerateRoute: router.onGenerateRoute,
     );
   }

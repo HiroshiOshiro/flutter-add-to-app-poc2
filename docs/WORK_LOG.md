@@ -453,3 +453,102 @@ Flutter化した画面は0件だが、**土台はすべて揃っている**。Ph
 Dart側にConfirm画面を実装して登録表に1行足すことだけで、**ネイティブ側の
 コードには手を入れない**見込み。それが実際に成立するかどうかが、この構成が
 狙い通りかを判定する基準になる。
+
+## デバッグ環境の確認と、そこで見つかった不具合
+
+Phase 1 に進む前に、ネイティブとFlutterをどうデバッグするかを実地で確認した。
+
+### `flutter attach` は成立する
+
+add-to-appではアプリを起動するのはネイティブのIDE側なので、`flutter run` は
+使えない。代わりに、アプリを起動してFlutter画面を表示した状態で
+`flutter attach` する。
+
+```bash
+cd legacyapp_flutter
+flutter attach -d emulator-5554
+```
+
+本構成では `FlutterEngineGroup` からエンジンを生成しているが、それでも
+問題なく接続でき、ホットリロード・ホットリスタート・DevToolsがすべて使える
+ことを確認した。
+
+```
+Syncing files to device sdk gphone64 arm64...
+r Hot reload. 🔥🔥🔥
+A Dart VM Service on sdk gphone64 arm64 is available at: http://127.0.0.1:58615/...
+```
+
+実際にDartの文字列を書き換えてホットリロードすると、画面が即座に更新された。
+
+```
+Performing hot reload...
+Reloaded 1 of 800 libraries in 1,083ms
+```
+
+**対話操作なしでホットリロードを起こす方法。** `--pid-file` を付けて
+起動しておけば、シグナルで反映できる。CIやスクリプトから使える。
+
+```bash
+flutter attach -d <device> --pid-file=/tmp/flutter.pid
+kill -SIGUSR1 $(cat /tmp/flutter.pid)   # ホットリロード
+kill -SIGUSR2 $(cat /tmp/flutter.pid)   # ホットリスタート
+```
+
+### 見つかった不具合: 戻る操作でネイティブに抜けられない
+
+デバッグ手順の確認中に、**Flutter画面で戻る操作をしてもネイティブ画面に
+戻らず、「未登録ルート」のフォールバックが現れる**ことに気づいた。
+
+原因は `MaterialApp` の初期ルートの扱いだった。`initialRoute` は `/` で
+分割されて**複数の画面が積まれる**仕様で、`/confirm` を渡すと
+`['/', '/confirm']` の2画面になる。そのため戻る操作で `/confirm` がpopされ、
+下にあった `/` が現れていた。
+
+Widgetテストで確定させた。
+
+```dart
+final NavigatorState nav = tester.state(find.byType(Navigator));
+expect(nav.canPop(), isFalse);   // Expected: false / Actual: <true>
+```
+
+add-to-appでは、**Flutterの画面スタックの底で戻ったらネイティブ側の
+コンテナに抜ける**のが正しい。`onGenerateInitialRoutes` を渡して初期スタックを
+常に1画面にすることで修正した。
+
+```dart
+List<Route<Object?>> onGenerateInitialRoutes(String initialRoute) {
+  return <Route<Object?>>[onGenerateRoute(RouteSettings(name: initialRoute))];
+}
+```
+
+修正後、戻る操作で `MainActivity` に抜けることをエミュレータで確認した。
+同じ内容を回帰テストとして追加している。
+
+**この不具合は、画面が1つも登録されていないPhase 0 の段階だからこそ
+見つけやすかった。** 実装済みの画面があると「戻ったら前の画面が出た」で
+見過ごしやすい。土台だけを先に作って動かす進め方の副次的な利点といえる。
+
+### 反省: ビルドが反映されていない状態で判断しかけた
+
+修正後に一度検証したとき、まだ `/` が出ていたため「修正が効いていない」と
+判断しかけた。実際にはインストールされていたAPKが修正前のものだった。
+
+`strings` でAPK内のシンボルを数えて確認しようとしたが、
+`onGenerateInitialRoutes` はFlutterフレームワーク側にも存在する名前なので、
+これでは判定にならなかった。**画面に出る一意な文字列をマーカーとして
+仕込む**方が確実で、そうしたところ新しいDartが端末に届いていることを
+はっきり確認できた。
+
+### デバッグ対象ごとの道具
+
+| 対象 | 使うもの |
+|---|---|
+| Dartのコード | `flutter attach` + DevTools、またはIDEのFlutterデバッガをアタッチ |
+| ネイティブのコード | Android Studio / Xcode のデバッガ（通常通り） |
+| 境界（MethodChannel） | 両側にログを入れる。チャンネル名・メソッド名・引数の型のいずれかが食い違うと無言で失敗する |
+| どちらの層の問題か切り分け | フィーチャーフラグでネイティブ実装に戻して再現するか見る |
+
+最後の行が本構成の利点で、**同じ画面のネイティブ実装とFlutter実装を実行時に
+切り替えられる**ため、「Flutter化して出た問題」か「元からあった問題」かを
+その場で切り分けられる。

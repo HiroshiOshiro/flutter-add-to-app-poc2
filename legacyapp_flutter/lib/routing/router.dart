@@ -23,6 +23,21 @@ class AppRouter {
 
   final Map<String, WidgetBuilder> screens;
 
+  /// 初期ルートを「1画面だけのスタック」として構成する。
+  ///
+  /// [MaterialApp]の既定の実装は `initialRoute` を `/` で分割して複数の画面を
+  /// 積む。`/confirm` を渡すと `['/', '/confirm']` の2画面になり、最初の
+  /// Flutter画面で戻る操作をしたときにネイティブ画面へ戻らず、`/` の画面が
+  /// 現れてしまう。
+  ///
+  /// add-to-appでは、Flutterの画面スタックの底で戻る操作をしたら**ネイティブ側の
+  /// コンテナに抜ける**のが正しい。そのため初期スタックは常に1画面にする。
+  List<Route<Object?>> onGenerateInitialRoutes(String initialRoute) {
+    return <Route<Object?>>[
+      onGenerateRoute(RouteSettings(name: initialRoute)),
+    ];
+  }
+
   Route<Object?> onGenerateRoute(RouteSettings settings) {
     final WidgetBuilder? builder = screens[settings.name];
     if (builder != null) {

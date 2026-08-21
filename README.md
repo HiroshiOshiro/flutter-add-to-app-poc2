@@ -144,6 +144,38 @@ flutter build apk --debug
 「Music」タブは iTunes Search API を使った楽曲検索・お気に入り登録
 （ローカルSQLite保存）で、現時点では全てネイティブ実装。
 
+## デバッグする
+
+アプリを起動するのはネイティブのIDE側なので、`flutter run` は使えない。
+アプリを起動してFlutter画面を表示した状態で `flutter attach` する。
+ホットリロード・ホットリスタート・DevToolsがそのまま使える。
+
+```bash
+cd legacyapp_flutter
+flutter attach -d <device-id>      # flutter devices で確認
+```
+
+対話操作なしでホットリロードしたい場合は `--pid-file` を使う。
+
+```bash
+flutter attach -d <device-id> --pid-file=/tmp/flutter.pid
+kill -SIGUSR1 $(cat /tmp/flutter.pid)   # ホットリロード
+kill -SIGUSR2 $(cat /tmp/flutter.pid)   # ホットリスタート
+```
+
+デバッグ対象によって使う道具が変わる。
+
+| 対象 | 使うもの |
+|---|---|
+| Dartのコード | `flutter attach` + DevTools、またはIDEのFlutterデバッガをアタッチ |
+| ネイティブのコード | Android Studio / Xcode のデバッガ |
+| 境界（MethodChannel） | 両側にログを入れる。チャンネル名・メソッド名・引数の型のいずれかが食い違うと無言で失敗する |
+| どちらの層の問題か | フィーチャーフラグでネイティブ実装に戻し、再現するか確認する |
+
+**ビルドが端末に反映されているか怪しいとき**は、画面に出る一意な文字列を
+一時的に仕込んで確認するのが確実。APK内のシンボルを `strings` で探す方法は、
+Flutterフレームワーク側に同名のものがあると判定にならない。
+
 ## フィーチャーフラグを切り替える
 
 Flutter化した画面に問題があったときにリリースを待たずネイティブ実装へ戻せる

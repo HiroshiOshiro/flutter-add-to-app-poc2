@@ -45,6 +45,23 @@ void main() {
     expect(find.text('next screen'), findsOneWidget);
   });
 
+  testWidgets('starts with a single screen so back leaves Flutter entirely',
+      (tester) async {
+    await tester.pumpWidget(MainApp(
+      initialRoute: AppRoutes.confirm,
+      router: AppRouter(<String, WidgetBuilder>{
+        AppRoutes.confirm: (_) => screen('confirm screen'),
+      }),
+    ));
+    await tester.pumpAndSettle();
+
+    // MaterialAppの既定では initialRoute が '/' で分割され ['/', '/confirm']
+    // の2画面が積まれる。そうなっていると、最初のFlutter画面で戻る操作を
+    // したときにネイティブへ抜けずに '/' が現れてしまう。
+    final NavigatorState navigator = tester.state(find.byType(Navigator));
+    expect(navigator.canPop(), isFalse);
+  });
+
   testWidgets('falls back to a visible message for an unregistered route',
       (tester) async {
     await tester.pumpWidget(const MainApp(
