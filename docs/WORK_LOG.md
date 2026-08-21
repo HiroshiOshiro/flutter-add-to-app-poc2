@@ -47,7 +47,7 @@ sdk.dir=$HOME/Library/Android/sdk
 ```
 
 を手で作る必要がある。Android Studioで開けば自動生成されるが、コマンド
-ラインだけで作業する場合は最初に引っかかる。README に書く。
+ラインだけで作業する場合は最初に引っかかる。README に記載済み。
 
 ## Phase 0-1: Flutterモジュールの作成とDart側の土台
 
