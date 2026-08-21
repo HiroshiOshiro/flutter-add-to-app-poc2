@@ -6,12 +6,16 @@ pluginManagement {
     }
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode = RepositoriesMode.PREFER_SETTINGS
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
     }
 }
 
 rootProject.name = "LegacyApp"
-include ':app'
+include(":app")
+setBinding(new Binding([gradle: this]))
+def filePath = settingsDir.parentFile.toString() + "/legacyapp_flutter/.android/include_flutter.groovy"
+apply from: filePath

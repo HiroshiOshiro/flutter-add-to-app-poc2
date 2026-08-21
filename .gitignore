@@ -9,3 +9,10 @@ local.properties
 legacy_ios/build/
 *.xcuserstate
 xcuserdata/
+
+# Flutter module (生成物。flutter pub get で再生成される)
+legacyapp_flutter/.android/
+legacyapp_flutter/.ios/
+legacyapp_flutter/build/
+legacyapp_flutter/.dart_tool/
+legacyapp_flutter/.flutter-plugins-dependencies
