@@ -29,6 +29,16 @@
             android:name=".TrackDetailActivity"
             android:exported="false" />
 
+        <!-- Flutter画面を表示する唯一のActivity。画面をFlutter化しても
+             ここは増えない。 -->
+        <activity
+            android:name=".flutter.FlutterScreenActivity"
+            android:theme="@style/FlutterTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false" />
+
     </application>
 
 </manifest>

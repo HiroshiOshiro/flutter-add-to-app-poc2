@@ -5,5 +5,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.7.0'
+        // Flutter統合のために新規に書くコードはKotlinで書く。
+        // 既存のJavaと同一Gradleモジュール内で共存でき、相互に呼び出せる。
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.20'
     }
 }

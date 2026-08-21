@@ -2,4 +2,10 @@
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.DarkActionBar">
         <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
     </style>
+
+    <!-- FlutterActivity 用。Flutter側の Scaffold が自前で AppBar を描くため、
+         ホスト側の ActionBar をそのまま使うと二重に表示される。 -->
+    <style name="FlutterTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
 </resources>

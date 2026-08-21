@@ -201,3 +201,106 @@ warning • The map entry key can't be null, so the null-aware operator '?'
 
 この時点では登録済みの画面が0件のため、実機での確認はネイティブ側の土台
 （Phase 0-2）と合わせて行う。
+
+## Phase 0-2: Android側の土台
+
+### Gradleの配線
+
+`settings.gradle` で `include_flutter.groovy` を評価し、`app/build.gradle` に
+`implementation project(':flutter')` を足す。ここで増えるサブプロジェクト名は
+`:flutter` に固定されている。
+
+**予見できた問題: リポジトリ集中管理との衝突。** 本アプリの
+`settings.gradle` は `repositoriesMode` が `FAIL_ON_PROJECT_REPOS` になって
+いた。Flutterのgradleプラグインはプロジェクトレベルで独自にリポジトリを
+追加するため、この設定のままFlutterモジュールを組み込むとビルドが失敗する。
+先行リポジトリで踏んだ問題なので、組み込みと同時に次の2点を先に対処した。
+
+- `repositoriesMode` を `PREFER_SETTINGS` に緩和
+- Flutterエンジン本体の配布先 `https://storage.googleapis.com/download.flutter.io`
+  を `settings.gradle` 側のリポジトリに追加
+
+**Kotlinの追加。** Flutter統合のために新規に書くコードはKotlinで書く。
+ルートの `build.gradle` に kotlin-gradle-plugin を、`app/build.gradle` に
+`kotlin-android` プラグインを追加した。既存のJavaと同一Gradleモジュール内で
+共存でき、相互に呼び出せる。JavaとKotlinでターゲットが揃っていないと
+`Inconsistent JVM-target compatibility detected` で失敗するため、
+`kotlinOptions { jvmTarget = '1.8' }` を既存の `compileOptions` に合わせて
+指定した（これも先行リポジトリで踏んでいる）。
+
+### ネイティブ側のクラス構成
+
+```
+flutter/
+  FlutterHost.kt            FlutterEngineGroupの保持とIntentの生成
+  FlutterScreenActivity.kt  Flutter画面を表示する唯一のActivity
+  NativeRouter.kt           論理的な画面名 -> ネイティブ実装かFlutter実装かの判断
+  NativeServices.kt         機能単位のMethodChannelハンドラ
+  FeatureFlags.kt           画面ごとのFlutter有効/無効
+```
+
+**Activityは画面ごとに作らない。** 先行リポジトリは `ConfirmFlutterActivity`
+を作り、Musicタブを足すときに `MusicFlutterEngineHolder` を追加した。つまり
+画面が増えるたびにネイティブ側のクラスが増えていた。
+
+今回は `FlutterScreenActivity` ひとつで、どの画面を表示するかは
+[FlutterHost.intentFor] が渡す初期ルートで決まる。**画面をFlutter化しても
+このActivityには手を入れない。**
+
+**エンジンは `FlutterEngineGroup` から生成する。** 画面ごとにFlutterEngineを
+個別に生成すると1つあたり数十MBを消費するため、画面数が増えると成立しない。
+EngineGroupから生成したエンジンはスナップショット・GPUコンテキスト・フォントを
+共有するので、2つ目以降の増分はごくわずかで済む。
+
+Flutterは `FlutterActivity.NewEngineInGroupIntentBuilder` を用意しており、
+エンジンの生成・実行・破棄はこれに任せられる。先行リポジトリでは
+`FlutterEngine` を手で生成していたため `FlutterLoader.ensureInitializationComplete()`
+の呼び忘れやプラグイン登録の順序で複数回つまずいたが、今回はその層に
+触っていない。
+
+**フラグの判断は1箇所に集約する。** 呼び出し側が `FeatureFlags` を直接見る
+作りにすると、画面をFlutter化するたびに分岐がアプリ中に散らばる。
+`NativeRouter` が「確認画面へ行きたい」という要求を受けて、ネイティブ実装と
+Flutter実装のどちらを開くかを決める。`MemoFragment` は
+`new Intent(requireContext(), ConfirmActivity.class)` を直接作るのをやめ、
+`NativeRouter.intentFor(context, Screen.CONFIRM)` を呼ぶだけになった。
+
+**FlutterActivityのテーマ。** Flutter側の `Scaffold` が自前でAppBarを描くため、
+ホストの ActionBar と二重に表示される。`Theme.MaterialComponents.Light.NoActionBar`
+を親にした `FlutterTheme` を用意してManifestで割り当てた。
+
+### 検証
+
+エミュレータで両方の経路を確認した。
+
+| フラグ | 結果 |
+|---|---|
+| OFF（既定） | 従来通りネイティブの確認画面が開く。**移行前の挙動が変わっていない** |
+| ON | Flutter画面が開き、`No Flutter screen is registered for "/confirm"` が表示される |
+
+フラグONで意図した通りの表示になったことで、次の経路が通っていることが
+確認できた。
+
+```
+MemoFragment -> NativeRouter -> FeatureFlags(ON)
+  -> FlutterHost（EngineGroupからエンジン生成・初期ルート "/confirm" を指定）
+  -> FlutterScreenActivity -> Dart側 main() -> AppRouter
+  -> 未登録ルートのフォールバック画面
+```
+
+Phase 1 で残っているのは **Dart側の登録表に1行足すこと**だけで、ネイティブ側の
+コードは変更しない。これが本構成の狙い通りかどうかは Phase 1 で確認する。
+
+**フラグの切り替え方（動作確認用）。** アプリを停止した状態で
+SharedPreferences のファイルを直接置き換える。再ビルド不要でフラグの
+切り替えが効くことも同時に確認できる。
+
+```bash
+adb shell am force-stop com.example.legacyapp
+adb push feature_flags.xml /data/local/tmp/feature_flags.xml
+adb shell run-as com.example.legacyapp \
+  cp /data/local/tmp/feature_flags.xml shared_prefs/feature_flags.xml
+```
+
+`run-as` のシェル内で `mkdir -p shared_prefs && cp ...` のように複合コマンドを
+書くと `mkdir: Needs 1 argument` になる。`run-as` は単一コマンドとして扱う。

@@ -1,6 +1,8 @@
 package com.example.legacyapp;
 
 import android.content.Intent;
+
+import com.example.legacyapp.flutter.NativeRouter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
@@ -66,7 +68,13 @@ public class MemoFragment extends Fragment {
             BaseActivity.sFormData.name = nameEdit.getText().toString();
             BaseActivity.sFormData.email = emailEdit.getText().toString();
             BaseActivity.sFormData.message = messageEdit.getText().toString();
-            startActivity(new Intent(requireContext(), ConfirmActivity.class));
+            // 確認画面がネイティブ実装かFlutter実装かはNativeRouterが決める。
+            // 呼び出し側はフラグを見ない。
+            Intent intent = NativeRouter.INSTANCE.intentFor(
+                    requireContext(), NativeRouter.Screen.CONFIRM);
+            if (intent != null) {
+                startActivity(intent);
+            }
         });
     }
 
