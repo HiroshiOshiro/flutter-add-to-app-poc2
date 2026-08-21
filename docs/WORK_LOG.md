@@ -46,8 +46,14 @@ clone しただけではAndroidビルドが
 sdk.dir=$HOME/Library/Android/sdk
 ```
 
-を手で作る必要がある。Android Studioで開けば自動生成されるが、コマンド
-ラインだけで作業する場合は最初に引っかかる。README に記載済み。
+を手で作るか、環境変数 `ANDROID_HOME` を設定する。後から確認したところ、
+**`local.properties` が無くても `ANDROID_HOME` だけでビルドできる**。
+また、このファイルを生成するのはGradleではなくAndroid Studioで、
+`ANDROID_HOME` でビルドが成功しても再生成されない。つまりコマンドライン
+だけで作業するなら不要なファイルであり、CIでは環境変数の方が適切。
+
+絶対パス（ユーザー名を含む）を持つマシン固有の設定なので、コミットしては
+いけない。README に記載済み。
 
 ## Phase 0-1: Flutterモジュールの作成とDart側の土台
 

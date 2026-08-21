@@ -49,17 +49,24 @@ flutter pub get
 
 ## Android（legacy_android）を実行する
 
-**`local.properties` を作る。** マシン固有のためリポジトリに含まれていない。
-これが無いとビルドが `SDK location not found` で失敗する。Android Studioで
-プロジェクトを開けば自動生成されるが、コマンドラインだけで作業する場合は
-手で作る。
+**Android SDKの場所を指定する。** 指定が無いとビルドが
+`SDK location not found` で失敗する。方法は2つあり、**環境変数を推奨**する。
+
+```bash
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+```
+
+もう一方は `local.properties` に書く方法。このファイルは絶対パスを含む
+マシン固有の設定であり、リポジトリには含まれない（gitignore対象）。
+Android Studioでプロジェクトを開くと自動生成される。Gradleは生成しないため、
+コマンドラインだけで作業する場合は環境変数を使うか、手で作る。
 
 ```bash
 echo "sdk.dir=$HOME/Library/Android/sdk" > legacy_android/local.properties
 ```
 
-あとは `legacy_android` をAndroid Studioで開き、エミュレータ/実機を選んで
-Runする。
+Android Studioで `legacy_android` を開く場合は、エミュレータ/実機を選んで
+Runするだけでよい。
 
 コマンドラインでビルドする場合:
 
