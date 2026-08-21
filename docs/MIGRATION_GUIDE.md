@@ -38,6 +38,53 @@
 
 ---
 
+## 1.5. 着手前に確認するバージョン
+
+**Flutter SDK のバージョンが、ホストアプリのビルドツールに要求する下限を
+決める。** ここを先に確認しないと、組み込んだ直後にビルドが3回連続で失敗する
+（実際にそうなった）。
+
+要求される下限はFlutter SDKの更新で上がるため、**手元のSDKで確認するのが
+確実**。以下は Flutter 3.47.1 で確認した値。
+
+| 対象 | 要求 | 確認方法 |
+|---|---|---|
+| Android: Gradle | 8.14 以上 | `gradle/wrapper/gradle-wrapper.properties` |
+| Android: Android Gradle Plugin | 8.11.1 以上 | ルートの `build.gradle` |
+| Android: Gradleを動かすJDK | 17 以上 | `./gradlew -version` の `Launcher JVM` |
+| iOS: Xcode | 15.0 以上 | `xcodebuild -version` |
+| iOS: SPM方式を使う場合のFlutter | 3.44 以上 | `flutter build --help` に `swift-package` があるか |
+
+いずれも満たしていない場合は、Flutter Gradleプラグインが具体的な下限を挙げた
+エラーを出す。
+
+```
+> Error: Your project's Gradle version (8.9.0) is lower than Flutter's
+  minimum supported version of 8.14.0. Please upgrade your Gradle version.
+
+> Error: Your project's Android Gradle Plugin version (8.7.0) is lower than
+  Flutter's minimum supported version of Android Gradle Plugin version 8.11.1.
+```
+
+> **「Java 17 以上」はホストアプリの `compileOptions` の話ではない。**
+> 要求されるのは **Gradleを動かすJDK** のバージョン。`compileOptions` を
+> `VERSION_1_8` のままにしてもビルドは通る（検証済み）。公式ドキュメントは
+> この要求の説明に `compileOptions` のスニペットを併記しているため誤解しやすい。
+
+### モジュールの配置
+
+Flutterモジュールは**ホストアプリと兄弟ディレクトリ**に置く。以降のスニペットは
+すべてこの配置を前提にしている。
+
+```
+my_flutter_module/
+  lib/
+MyNativeApp/
+  ...
+```
+
+---
+
 ## 2. 全体の流れ
 
 ```mermaid
@@ -77,10 +124,14 @@ flutter create -t module --org com.example flutter_module
 すべての画面の置き場**になる。最初にFlutter化する機能の名前を付けると、2画面目を
 足した時点で実態と合わなくなる。ホストアプリに紐づく名前にしておく。
 
-### androidPackage をホストアプリと別にする
+### androidPackage の確認
 
-`pubspec.yaml` の `module.androidPackage` は、**ホストアプリのパッケージ名と
-異なる**必要がある。同じにするとDexのマージで衝突する。
+`pubspec.yaml` の `module.androidPackage` は、ホストアプリのパッケージ名と
+異なる必要がある。同じだとDexのマージで衝突する。
+
+ただし **`flutter create` はモジュール名から自動的に別の値を生成する**ため、
+通常は何もしなくてよい（`com.example.<module_name>` になる）。モジュール名を
+ホストアプリ名と同じにした場合だけ問題になる。**作業ではなく確認事項。**
 
 ---
 
@@ -88,17 +139,8 @@ flutter create -t module --org com.example flutter_module
 
 ### 前提条件
 
-- **Java 17 以上**（ホストアプリの `compileOptions` を確認する）
-- Gradle 7 以上（リポジトリの集中管理を使うため）
-
-```groovy
-android {
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
-```
+1.5節の表を先に確認すること。Gradle・Android Gradle Plugin・JDK のいずれかが
+下限を下回っていると、組み込んだ直後にビルドが失敗する。
 
 ### リポジトリ設定を settings.gradle に集約する
 
@@ -119,6 +161,19 @@ dependencyResolutionManagement {
 > **`FAIL_ON_PROJECT_REPOS` にしているプロジェクトは、この設定のまま組み込むと
 > ビルドが失敗する。** Flutterのgradleプラグインがプロジェクトレベルで独自に
 > リポジトリを追加するため。`PREFER_SETTINGS` に緩和する。
+>
+> ```
+> > Failed to apply plugin 'dev.flutter.flutter-gradle-plugin'.
+>    > Build was configured to prefer settings repositories over project
+>      repositories but repository 'maven' was added by plugin
+>      'dev.flutter.flutter-gradle-plugin'
+> ```
+>
+> 緩和後は同じ文言が**警告として**出るだけになる（正常）。
+
+> ここで削除するのは**依存解決用**の `repositories` であって、ルートの
+> `buildscript { repositories { ... } }` は残す。両者は別物で、後者を消すと
+> ビルドツール自体が解決できなくなる。
 
 ### 組み込み方式を選ぶ
 
@@ -173,10 +228,11 @@ dependencies {
 > 独自のbuild type（`staging` など）があると解決に失敗するため
 > `matchingFallbacks` が必要になる。また `profile` build type の定義も要る。
 
-### ABIを絞る（推奨）
+### ABIを絞る（任意）
 
-Flutterは x86_64 / armeabi-v7a / arm64-v8a のみ対応。ホストアプリが他のABIを
-サポートしている場合は絞り込む。
+Flutterは x86_64 / armeabi-v7a / arm64-v8a のみ対応。**未設定でもビルド・実行は
+できる**（検証済み）。ホストアプリがこれ以外のABIをサポートしている場合に、
+Flutterが提供しないABI向けのAPKが壊れるのを避けるために絞る。
 
 ```groovy
 android {
@@ -209,7 +265,14 @@ flutter build swift-package --platform ios
 ```
 
 `build/ios/SwiftPackages/` に `FlutterNativeIntegration` パッケージと
-連携用スクリプトが出力される。Xcode側の作業は次の通り。
+連携用スクリプトが出力される。
+
+> **出力先が `build/` 配下、つまりバージョン管理対象外**である点に注意。
+> Androidのsource moduleは `.android/` を `flutter pub get` が生成するが、
+> iOSのSPM方式は**このコマンドを明示的に実行しないとXcodeプロジェクトが開けない**。
+> チェックアウト直後とCIでは、ビルドの前に必ず実行する。
+
+Xcode側の作業は次の通り。
 
 1. 生成されたパッケージを **Add Files to...** で追加（**Reference files in place**）
 2. Target の **General** → **Frameworks, Libraries, and Embedded Content** に追加
@@ -220,6 +283,65 @@ flutter build swift-package --platform ios
 
 Xcodeからビルドするたびにflutterアプリを再ビルドさせたい場合は
 `FLUTTER_APPLICATION_PATH` と `ENABLE_USER_SCRIPT_SANDBOXING=NO` も設定する。
+
+#### プロジェクト生成ツールを使っている場合
+
+XcodeGenやTuistでプロジェクトを生成している場合、**上記のGUI操作は再生成の
+たびに失われる**ため、定義ファイル側に書く必要がある。XcodeGen での対応は
+次の通りで、6手順すべて表現できる（検証済み）。
+
+| 手順 | XcodeGen での書き方 |
+|---|---|
+| 1. パッケージを追加 | `packages:` に `path:` でローカルパッケージを定義 |
+| 2. Frameworks に追加 | target の `dependencies: - package: FlutterNativeIntegration` |
+| 3. Build Settings | `settings.base` に `FLUTTER_SWIFT_PACKAGE_OUTPUT` |
+| 4. Scheme の Pre-action | `schemes.<name>.build.preActions`（`settingsTarget` の指定が要る） |
+| 5. Run Script + 入力リスト | `postCompileScripts` に `basedOnDependencyAnalysis: false` と `inputFileLists` |
+
+```yaml
+packages:
+  FlutterNativeIntegration:
+    path: ../my_flutter_module/build/ios/SwiftPackages/FlutterNativeIntegration
+
+targets:
+  MyApp:
+    dependencies:
+      - package: FlutterNativeIntegration
+    settings:
+      base:
+        FLUTTER_SWIFT_PACKAGE_OUTPUT: $(SRCROOT)/../my_flutter_module/build/ios/SwiftPackages
+        FLUTTER_APPLICATION_PATH: $(SRCROOT)/../my_flutter_module
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    postCompileScripts:
+      - name: "[Flutter] assemble"
+        script: /bin/sh "$FLUTTER_SWIFT_PACKAGE_OUTPUT/Scripts/flutter_integration.sh" assemble
+        basedOnDependencyAnalysis: false
+        inputFileLists:
+          - $(FLUTTER_SWIFT_PACKAGE_OUTPUT)/Scripts/FlutterAssembleInputs.xcfilelist
+
+schemes:
+  MyApp:
+    build:
+      preActions:
+        - name: "[Flutter] prebuild"
+          script: /bin/sh "$FLUTTER_SWIFT_PACKAGE_OUTPUT/Scripts/flutter_integration.sh" prebuild
+          settingsTarget: MyApp
+```
+
+#### SPM方式で import するモジュール
+
+`FlutterNativeIntegration` は**中身が空のシム**で、Flutter本体は別モジュールに
+ある。Swiftからは次の2つをimportする。
+
+```swift
+import Flutter                    // FlutterEngine, FlutterViewController など
+import FlutterPluginRegistrant    // GeneratedPluginRegistrant
+```
+
+パッケージの依存関係は
+`FlutterNativeIntegration → FlutterPluginRegistrant → FlutterFramework → Flutter`
+となっており、`import FlutterNativeIntegration` だけでは
+`cannot find 'FlutterEngineGroup' in scope` になる。
 
 ### 方式2: CocoaPods
 
@@ -325,15 +447,28 @@ GPUコンテキスト・フォントメトリクス・isolate group snapshot を
 ```xml
 <activity
   android:name="io.flutter.embedding.android.FlutterActivity"
-  android:theme="@style/LaunchTheme"
+  android:theme="@style/AppTheme"
   android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
   android:hardwareAccelerated="true"
   android:windowSoftInputMode="adjustResize" />
 ```
 
-> **テーマに注意。** Flutter側の `Scaffold` が自前でAppBarを描くため、ホストの
-> ActionBarをそのまま使うと二重に表示される。`NoActionBar` 系のテーマを
-> 用意して割り当てる。
+> **公式ドキュメントのスニペットは `@style/LaunchTheme` を参照しているが、
+> これはFlutterが新規アプリを生成するときに作るテーマであり、既存のネイティブ
+> アプリには存在しない。** そのまま貼るとビルドが失敗する。
+>
+> ```
+> AAPT: error: resource style/LaunchTheme
+>   (aka com.example.myapp:style/LaunchTheme) not found.
+> ```
+>
+> ホストアプリ既存のテーマを指定するか、専用のテーマを定義する。
+>
+> なお「Flutter側の `Scaffold` とホストのActionBarが二重に表示される」という
+> 問題は、**`FlutterActivity` では発生しなかった**（AppCompat系・framework系の
+> ActionBarテーマの両方で確認）。`FlutterActivity` は `AppCompatActivity` では
+> ないため。`FlutterFragment` をActionBarを描くActivityに埋め込む場合は
+> 起こり得る。
 
 起動方法は方式によって変わる。
 
@@ -344,6 +479,24 @@ startActivity(FlutterActivity.withNewEngine().initialRoute("/my_route").build(th
 // キャッシュエンジン
 startActivity(FlutterActivity.withCachedEngine("my_engine_id").build(this))
 ```
+
+**推奨する `FlutterEngineGroup` を使う場合**は、グループからエンジンを生成し、
+それを `FlutterEngineCache` に入れて `withCachedEngine` で起動する、という
+2つの仕組みの組み合わせになる。
+
+```kotlin
+val group = FlutterEngineGroup(context)
+val engine = group.createAndRunEngine(
+    context,
+    DartExecutor.DartEntrypoint.createDefault(),
+    "/my_route",          // 初期ルート
+)
+FlutterEngineCache.getInstance().put(ENGINE_ID, engine)
+startActivity(FlutterActivity.withCachedEngine(ENGINE_ID).build(context))
+```
+
+`FlutterActivity.NewEngineInGroupIntentBuilder` を使えばキャッシュを介さずに
+起動することもできる。
 
 **キャッシュエンジンで初期ルートを指定する場合は、Dartのエントリポイントを
 実行する前に設定する。** 実行後では手遅れになる。
@@ -358,7 +511,30 @@ flutterEngine.dartExecutor.executeDartEntrypoint(DartExecutor.DartEntrypoint.cre
 ### iOS
 
 `FlutterViewController` を表示する。エンジンをどう用意するかはAndroidと同じ
-選択になる。
+選択になる。`FlutterEngineGroup` を使う場合は次の形になる。
+
+```swift
+import Flutter
+import FlutterPluginRegistrant
+
+private static let engineGroup = FlutterEngineGroup(name: "my_group", project: nil)
+
+static func viewController(route: String) -> UIViewController {
+    // entrypoint に nil を渡すと main() が使われる
+    let engine = engineGroup.makeEngine(
+        withEntrypoint: nil,
+        libraryURI: nil,
+        initialRoute: route
+    )
+    GeneratedPluginRegistrant.register(with: engine)
+    return FlutterViewController(engine: engine, nibName: nil, bundle: nil)
+}
+```
+
+> オプション型は `FlutterEngineGroup` のネストした型ではなく
+> `FlutterEngineGroupOptions` という独立したクラス。Swiftから
+> `FlutterEngineGroup.Options` と書くと
+> `type 'FlutterEngineGroup' has no member 'Options'` になる。
 
 > **プラグインの登録はエンジンを実行した後に行う。** 順序を誤ると
 > `Setting a message handler before the FlutterEngine has been run` で
@@ -373,6 +549,9 @@ flutterEngine.dartExecutor.executeDartEntrypoint(DartExecutor.DartEntrypoint.cre
 `MaterialApp` の `initialRoute` は **`/` で分割されて複数の画面が積まれる**。
 `/confirm` を渡すと `['/', '/confirm']` の2画面になり、最初のFlutter画面で
 戻る操作をしたときにネイティブに戻らず `/` の画面が現れる。
+
+押す前に気づける手がかりがある。**画面スタックが2つあるため、Flutter側の
+AppBarに意図しない戻る矢印が表示される。**
 
 add-to-appでは「Flutterの画面スタックの底で戻ったらネイティブ側のコンテナに
 抜ける」のが正しい。`onGenerateInitialRoutes` を渡して初期スタックを1画面に
@@ -445,6 +624,33 @@ kill -SIGUSR1 $(cat /tmp/flutter.pid)   # ホットリロード
 kill -SIGUSR2 $(cat /tmp/flutter.pid)   # ホットリスタート
 ```
 
+> **iOSで `flutter attach` が `Waiting for a connection` から進まない場合。**
+> ローカルネットワーク権限を入れても自動探索が成功しないことがある
+> （Xcode 26.6 / iOSシミュレータ / Flutter 3.47.1 で確認）。
+> VMサービス自体は起動しているので、デバイスログからURLを拾って直接渡す。
+>
+> ```bash
+> xcrun simctl spawn <udid> log show --last 3m \
+>   --predicate 'processImagePath CONTAINS "MyApp"' --style compact \
+>   | grep "Dart VM service"
+> # flutter: The Dart VM service is listening on http://127.0.0.1:65135/AHGlBZAIIvs=/
+>
+> flutter attach -d <udid> --debug-url "http://127.0.0.1:65135/AHGlBZAIIvs=/"
+> ```
+
+> **ホットリロードが「成功」と出るのに画面が変わらない場合。**
+> ルートの画面をインラインのクロージャで組んでいると反映されない。
+>
+> ```dart
+> // 反映されない
+> builder: (_) => Scaffold(appBar: AppBar(...), body: ...)
+> // 反映される
+> builder: (_) => MyScreen()
+> ```
+>
+> 画面はWidgetクラスとして切り出す。切り出せない場合はホットリスタートで
+> 確認する。
+
 デバッグ対象によって使う道具が変わる。
 
 | 対象 | 使うもの |
@@ -479,9 +685,20 @@ Kotlin / Swiftで書いてよい。
   呼び出せる。JavaとKotlinで **JVMターゲットが揃っていないと**
   `Inconsistent JVM-target compatibility detected` で失敗する
 - **iOS** — Objective-CからSwiftを参照するには自動生成される
-  `<ProductModuleName>-Swift.h` をimportする。逆向きにはBridging Headerが要る。
-  Swiftファイルを1つでも追加する場合は
-  `ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES` を有効にする
+  `<ProductModuleName>-Swift.h` をimportする。SwiftからObjective-Cを参照する
+  にはBridging Headerを設定する。Swiftファイルを1つでも追加する場合は
+  `SWIFT_VERSION` と `ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES` を設定する
+  - **Bridging Header は「Swift→ObjC」だけの話ではない。** Bridging Header が
+    無いと、生成される `-Swift.h` に **`internal` な `@objc` クラスが
+    書き出されない**（`public` にすれば出る）。結果として
+    Objective-C 側が `use of undeclared identifier` になる。検証結果:
+
+    | 条件 | `internal` な `@objc` クラスが `-Swift.h` に出るか |
+    |---|---|
+    | Bridging Header なし | 出ない |
+    | Bridging Header あり | 出る |
+  - XcodeGenなどで生成している場合、`SWIFT_INSTALL_OBJC_HEADER` と
+    `SWIFT_OBJC_INTERFACE_HEADER_NAME` が既定で設定されないことがある
 
 ### 落とし穴チェックリスト
 
@@ -497,7 +714,12 @@ Kotlin / Swiftで書いてよい。
 | 戻る操作でネイティブに戻らない | `initialRoute` が分割されて複数画面積まれている |
 | 画面を増やすほどメモリが増える | エンジンを `FlutterEngineGroup` から生成していない |
 | Flutter画面を閉じても処理が動き続ける | キャッシュエンジンを `destroy()` していない |
-| iOSで `flutter attach` が繋がらない | Debug構成にローカルネットワーク権限が無い |
+| iOSで `flutter attach` が繋がらない | ローカルネットワーク権限が無い／自動探索が働かない（`--debug-url` を使う） |
+| Androidビルドが Gradle / AGP のバージョンで失敗 | Flutter SDKが要求する下限を下回っている（1.5節） |
+| `AAPT: error: resource style/LaunchTheme not found` | 公式スニペットのテーマは既存アプリに存在しない |
+| Objective-Cから `use of undeclared identifier <Swiftのクラス>` | Bridging Header が無く `-Swift.h` に書き出されていない |
+| `cannot find 'FlutterEngineGroup' in scope`（SPM） | `import Flutter` していない |
+| ホットリロードが「成功」なのに画面が変わらない | ルートの画面がインラインのクロージャ |
 
 ---
 

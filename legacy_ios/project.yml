@@ -32,6 +32,12 @@ targets:
       properties:
         CFBundleDisplayName: LegacyApp
         CFBundleLocalizations: [ja, en]
+        # flutter attach（ホットリロード・DevTools）に必要。
+        # 無いとビルド時に「Could not extract value ... NSBonjourServices」の
+        # 警告が出る。本来はDebug構成にだけ入れるべき（MIGRATION_GUIDE参照）。
+        NSBonjourServices:
+          - _dartVmService._tcp
+        NSLocalNetworkUsageDescription: Allows Flutter debugging and hot reload
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false

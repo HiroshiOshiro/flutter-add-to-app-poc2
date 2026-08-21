@@ -14,6 +14,8 @@
 - `legacyapp_flutter/` — Flutterモジュール（[公式アーキテクチャガイド](https://docs.flutter.dev/app-architecture/guide)の構成）
 - `docs/MIGRATION_GUIDE.md` — add-to-app の導入手順ガイド（一般化した内容）
 - `docs/WORK_LOG.md` — 作業ログ。設計判断の理由とつまずいた点
+- `docs/GUIDE_VERIFICATION_LOG.md` — 導入ガイドをFlutter未導入の状態から
+  追試した記録（ガイドのどこが誤り・不足だったか）
 
 ## 現在の状態（Phase 0 完了）
 

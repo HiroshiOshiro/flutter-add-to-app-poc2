@@ -552,3 +552,77 @@ List<Route<Object?>> onGenerateInitialRoutes(String initialRoute) {
 最後の行が本構成の利点で、**同じ画面のネイティブ実装とFlutter実装を実行時に
 切り替えられる**ため、「Flutter化して出た問題」か「元からあった問題」かを
 その場で切り分けられる。
+
+## 導入ガイドの追試検証
+
+`MIGRATION_GUIDE.md` を書いた時点では、**その手順を上からなぞって本当に成功
+するか**は確かめていなかった。ドキュメントの価値はそこで決まるため、Flutter
+未導入の状態（`580a513`）から分岐したブランチ `verify/migration-guide` で
+追試した。
+
+実行したコマンドと出力は `GUIDE_VERIFICATION_LOG.md` に逐次記録している。
+ここには結論だけ書く。
+
+### 前提の変更: Flutter SDK を 3.47.1 へ
+
+ガイドが推奨するiOSのSPM方式は Flutter 3.44 以降が必要で、作業時の 3.41.2 には
+`flutter build swift-package` が存在しなかった。SDKを 3.47.1 に更新した。
+
+**副作用として `main` のAndroidビルドが壊れた。** 新しいFlutter SDKが要求する
+Gradle / AGP のバージョンを満たさなくなったため。`main` 側も
+Gradle 8.9 → 8.14.3、AGP 8.7.0 → 8.11.1 に更新して復旧させた。
+**これ自体がガイドの欠陥の裏付け**でもある（バージョン要求が誤っていた）。
+
+### 結果: 誤り5件・不足9件
+
+ガイドに従うだけでは**両OSとも完走できなかった**。
+
+**誤り**
+
+| 箇所 | ガイドの記述 | 実際 |
+|---|---|---|
+| Gradle | 「7 以上」 | **8.14 以上**（Flutter 3.47.1） |
+| Java 17 | `compileOptions` の話として記載 | **Gradleを動かすJDK**の話。`compileOptions` は 1.8 で通る |
+| Manifestスニペット | `@style/LaunchTheme` を参照 | 既存アプリには存在せず、貼るとビルド失敗 |
+| AppBarの二重表示 | 「ホストのActionBarと二重になる」 | `FlutterActivity` では**再現しない** |
+| Bridging Header | 「Swift→ObjCの参照に必要」 | **ObjC→Swiftの参照にも必要**（無いと `internal` な `@objc` が `-Swift.h` に出ない） |
+
+**不足**
+
+- Android Gradle Plugin のバージョン要求（8.11.1以上）が**記載なし**
+- Flutter 3.44以降の要求がiOSの節にしかなく、前提として書かれていない
+- モジュールをホストアプリと兄弟ディレクトリに置く前提が明示されていない
+- 推奨方式の `FlutterEngineGroup` の起動コードが**Android・iOSとも無い**
+- SPMの出力先が `build/` 配下（バージョン管理対象外）である点が未記載
+- SPM方式で import するモジュール名（`Flutter` / `FlutterPluginRegistrant`）が未記載
+- **XcodeGen等でプロジェクトを生成している場合の対応表が無い**（GUI手順は再生成で消える）
+- iOSで `flutter attach` の自動探索が失敗する場合の `--debug-url` 回避策が無い
+- ホットリロードが効かない条件（ルート画面がインラインのクロージャ）が無い
+
+### 特に価値が高かった修正
+
+**XcodeGen 対応表。** ガイドのSPM手順はXcodeのGUI操作で書かれているが、
+プロジェクトを生成管理していると再生成のたびに消える。6手順すべてを
+`project.yml` で表現できることを確認し、対応表をガイドに追加した。
+これが無いと生成ツールを使っているプロジェクトはSPM方式を採用できない。
+
+### 検証で見つかった不具合を main にも反映
+
+- Gradle / AGP の更新（更新しないとビルドできない）
+- iOSに `NSBonjourServices` / `NSLocalNetworkUsageDescription` を追加
+  （**未追加だとビルド時に警告が出ていた**のに見落としていた）
+
+### 反省
+
+**古いビルドのまま動作確認して「修正が効いていない」と誤判断しかけた**のが
+2回。原因は別々だった。
+
+1. Androidの `adb install -r` が `INSTALL_FAILED_INSUFFICIENT_STORAGE` で
+   失敗していた（Debug APKが1.4GBある）。`-r` を付けているとエラーを
+   見落としやすい
+2. 同名アプリのDerivedDataが3つあり、**別プロジェクトの `-Swift.h` を見ながら
+   原因を探していた**
+
+いずれも「画面に出る一意な文字列をマーカーとして仕込む」で確実に切り分け
+られた。ビルドが反映されているかを疑う場面では、推測ではなくマーカーで
+確定させる。
