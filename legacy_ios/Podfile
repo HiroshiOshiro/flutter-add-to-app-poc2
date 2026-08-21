@@ -1,0 +1,20 @@
+platform :ios, '16.0'
+
+# Flutterモジュールの場所。podhelper.rb はモジュールの .ios/ 以下に生成される
+# （バージョン管理対象外。flutter pub get で再生成される）。
+flutter_application_path = '../legacyapp_flutter'
+load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
+
+target 'LegacyApp' do
+  # Flutter本体・FlutterPluginRegistrant・各プラグインのPodをまとめて展開する。
+  # ここで作られるPod名は 'Flutter' / 'FlutterPluginRegistrant' に固定されて
+  # いるため、1つのホストアプリに組み込めるFlutterモジュールは1つだけになる。
+  install_all_flutter_pods(flutter_application_path)
+end
+
+post_install do |installer|
+  # これを書かないと pod install が
+  # 'Missing flutter_post_install(installer) in Podfile post_install block'
+  # で失敗する。
+  flutter_post_install(installer)
+end

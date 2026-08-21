@@ -22,6 +22,11 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        # Flutter統合のために新規に書くコードはSwiftで書く。既存の
+        # Objective-Cと相互運用するため、双方向の設定が必要になる。
+        SWIFT_VERSION: "5.0"
+        SWIFT_OBJC_BRIDGING_HEADER: LegacyApp/Sources/LegacyApp-Bridging-Header.h
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
     info:
       path: Generated-Info.plist
       properties:

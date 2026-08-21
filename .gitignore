@@ -16,3 +16,6 @@ legacyapp_flutter/.ios/
 legacyapp_flutter/build/
 legacyapp_flutter/.dart_tool/
 legacyapp_flutter/.flutter-plugins-dependencies
+
+# CocoaPods (生成物。pod install で再生成される)
+legacy_ios/Pods/

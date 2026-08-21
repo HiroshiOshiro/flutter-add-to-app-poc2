@@ -8,32 +8,44 @@
 
 /* Begin PBXBuildFile section */
 		04EB9F6D3720709A03933ADC /* CompleteViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EC0277E2914560FF11F1DFC /* CompleteViewController.m */; };
+		073EC65D2E612CC197099075 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 185B3A593656B464E359B2A1 /* FeatureFlags.swift */; };
+		1074F902A70CF63F7147099E /* FlutterHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3306B788FB338D283C233E55 /* FlutterHost.swift */; };
 		108C755D7DC8BB570ACEDBD6 /* BaseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CD02FF016638479FABF72A4 /* BaseViewController.m */; };
 		249EFC3735BB1FD618F4D9E3 /* ConfirmViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BC58799B13AE5139571F7DB /* ConfirmViewController.m */; };
 		3348C475BB51B843F1070287 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8F80F83393C68709E87143A2 /* Assets.xcassets */; };
 		3B43E73240E57BC4A503FA4B /* MusicViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 34E440BA2146EDDB8F57CE43 /* MusicViewController.m */; };
+		3C55DD5AA2FD25F1344292DC /* FlutterScreenViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10BEBB4A3D098C8856D1613A /* FlutterScreenViewController.swift */; };
 		3CB566626EF3E9D24751DEFA /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E9D5301E589408797E65C5 /* libsqlite3.tbd */; };
 		3D3FF094F594DAFB52674EC4 /* FavoritesDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = CB52D3F228D7A62F936F2912 /* FavoritesDatabase.m */; };
 		3E789D5B26553A9A87D9F810 /* FavoritesStore.m in Sources */ = {isa = PBXBuildFile; fileRef = BE274618D2AB783AEBC78A57 /* FavoritesStore.m */; };
 		425F59F025702BDEEB667273 /* InputViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 56216691207C58856ED27C3E /* InputViewController.m */; };
 		513E617B58E5B5527B636A17 /* TrackTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 408FE583B6B2AA4BE5C98F22 /* TrackTableViewCell.m */; };
 		58025F7CE9BBDF26AEE847A8 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 86C2D4CB20A6DA86CAC2E039 /* Localizable.strings */; };
+		594FE13879C612C5FBE43B0F /* NativeRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EC878EF7B5C684D948D58C5 /* NativeRouter.swift */; };
 		59B784FDBD0B5514721D9EF9 /* FormData.m in Sources */ = {isa = PBXBuildFile; fileRef = 14285F0C11DCB60D47700C81 /* FormData.m */; };
 		5CF3D60B82590575CE306265 /* TrackDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 837DC4536FC10DEDA1459852 /* TrackDetailViewController.m */; };
+		80D71874C33693D120286FD5 /* libPods-LegacyApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 73A6816F2E842BDD1D2A946D /* libPods-LegacyApp.a */; };
 		98C581105D58D2CEF6BE57C8 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C0C6D33A39EEA86789ACAEBE /* SceneDelegate.m */; };
 		AB5B7EA704BBE74754468F25 /* ArtworkLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = B2C5832CEB3BB8509EA87419 /* ArtworkLoader.m */; };
+		DB4F5042976E3091E77E28E4 /* NativeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC012CFE9773892EC1D434F1 /* NativeServices.swift */; };
 		DB675B883D9FD91CA1F162BA /* ItunesTrack.m in Sources */ = {isa = PBXBuildFile; fileRef = C9D7C187CFD933BFA4DF71E0 /* ItunesTrack.m */; };
 		F4340F1CDBD0255BE1A6A3A5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 47DACC6ADE13256ED65D8FD4 /* main.m */; };
 		F8DEDB260E612456ECB4F4BD /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = EF1A96CEE9263FEA74C3FC1C /* AppDelegate.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0B2FD3FDC79166761A2FAAB2 /* LegacyApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LegacyApp-Bridging-Header.h"; sourceTree = "<group>"; };
+		10BEBB4A3D098C8856D1613A /* FlutterScreenViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlutterScreenViewController.swift; sourceTree = "<group>"; };
 		14285F0C11DCB60D47700C81 /* FormData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FormData.m; sourceTree = "<group>"; };
+		185B3A593656B464E359B2A1 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		19D36072572F81D464BD2E52 /* InputViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = InputViewController.h; sourceTree = "<group>"; };
 		1C170EAAA05C265529D4DCEC /* ConfirmViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ConfirmViewController.h; sourceTree = "<group>"; };
+		2EC878EF7B5C684D948D58C5 /* NativeRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRouter.swift; sourceTree = "<group>"; };
+		3306B788FB338D283C233E55 /* FlutterHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlutterHost.swift; sourceTree = "<group>"; };
 		34E440BA2146EDDB8F57CE43 /* MusicViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MusicViewController.m; sourceTree = "<group>"; };
 		3CD02FF016638479FABF72A4 /* BaseViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BaseViewController.m; sourceTree = "<group>"; };
 		408FE583B6B2AA4BE5C98F22 /* TrackTableViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TrackTableViewCell.m; sourceTree = "<group>"; };
+		456E644964DEC67A6C1D9516 /* Pods-LegacyApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LegacyApp.debug.xcconfig"; path = "Target Support Files/Pods-LegacyApp/Pods-LegacyApp.debug.xcconfig"; sourceTree = "<group>"; };
 		47DACC6ADE13256ED65D8FD4 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		4EC0277E2914560FF11F1DFC /* CompleteViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CompleteViewController.m; sourceTree = "<group>"; };
 		50448BA1D9D163FF25E44FA3 /* LegacyApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LegacyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -41,6 +53,7 @@
 		620D3074E2E451E18CF33D85 /* FavoritesDatabase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FavoritesDatabase.h; sourceTree = "<group>"; };
 		6ABF887357E8D8191D6E0724 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
 		6E0E2E42163B199F88424D9D /* FavoritesStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FavoritesStore.h; sourceTree = "<group>"; };
+		73A6816F2E842BDD1D2A946D /* libPods-LegacyApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-LegacyApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7BC58799B13AE5139571F7DB /* ConfirmViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ConfirmViewController.m; sourceTree = "<group>"; };
 		837DC4536FC10DEDA1459852 /* TrackDetailViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TrackDetailViewController.m; sourceTree = "<group>"; };
 		83D512E47E347C6E8601F4B4 /* FormData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FormData.h; sourceTree = "<group>"; };
@@ -51,6 +64,7 @@
 		A3E9D5301E589408797E65C5 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		B2C5832CEB3BB8509EA87419 /* ArtworkLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ArtworkLoader.m; sourceTree = "<group>"; };
 		B3C6C794B847079E077AC6D1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		BA7E117EC2EAA09012EB45E6 /* Pods-LegacyApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LegacyApp.release.xcconfig"; path = "Target Support Files/Pods-LegacyApp/Pods-LegacyApp.release.xcconfig"; sourceTree = "<group>"; };
 		BE274618D2AB783AEBC78A57 /* FavoritesStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FavoritesStore.m; sourceTree = "<group>"; };
 		C0C6D33A39EEA86789ACAEBE /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
 		C46FD178B60B32E803BCDEC1 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -62,6 +76,7 @@
 		EF1A96CEE9263FEA74C3FC1C /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		F173B41FDF18376D8B24F0C3 /* ItunesTrack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ItunesTrack.h; sourceTree = "<group>"; };
 		F746365D6D51B232F67CE029 /* TrackDetailViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TrackDetailViewController.h; sourceTree = "<group>"; };
+		FC012CFE9773892EC1D434F1 /* NativeServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeServices.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +85,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3CB566626EF3E9D24751DEFA /* libsqlite3.tbd in Frameworks */,
+				80D71874C33693D120286FD5 /* libPods-LegacyApp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,15 +109,21 @@
 				CB52D3F228D7A62F936F2912 /* FavoritesDatabase.m */,
 				6E0E2E42163B199F88424D9D /* FavoritesStore.h */,
 				BE274618D2AB783AEBC78A57 /* FavoritesStore.m */,
+				185B3A593656B464E359B2A1 /* FeatureFlags.swift */,
+				3306B788FB338D283C233E55 /* FlutterHost.swift */,
+				10BEBB4A3D098C8856D1613A /* FlutterScreenViewController.swift */,
 				83D512E47E347C6E8601F4B4 /* FormData.h */,
 				14285F0C11DCB60D47700C81 /* FormData.m */,
 				19D36072572F81D464BD2E52 /* InputViewController.h */,
 				56216691207C58856ED27C3E /* InputViewController.m */,
 				F173B41FDF18376D8B24F0C3 /* ItunesTrack.h */,
 				C9D7C187CFD933BFA4DF71E0 /* ItunesTrack.m */,
+				0B2FD3FDC79166761A2FAAB2 /* LegacyApp-Bridging-Header.h */,
 				47DACC6ADE13256ED65D8FD4 /* main.m */,
 				E7A2FEBFBEEB2A64BD26C82D /* MusicViewController.h */,
 				34E440BA2146EDDB8F57CE43 /* MusicViewController.m */,
+				2EC878EF7B5C684D948D58C5 /* NativeRouter.swift */,
+				FC012CFE9773892EC1D434F1 /* NativeServices.swift */,
 				6ABF887357E8D8191D6E0724 /* SceneDelegate.h */,
 				C0C6D33A39EEA86789ACAEBE /* SceneDelegate.m */,
 				F746365D6D51B232F67CE029 /* TrackDetailViewController.h */,
@@ -117,8 +139,19 @@
 			isa = PBXGroup;
 			children = (
 				A3E9D5301E589408797E65C5 /* libsqlite3.tbd */,
+				73A6816F2E842BDD1D2A946D /* libPods-LegacyApp.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		61CB9FC1E0BBF0AD63CC98DB /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				456E644964DEC67A6C1D9516 /* Pods-LegacyApp.debug.xcconfig */,
+				BA7E117EC2EAA09012EB45E6 /* Pods-LegacyApp.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		7708B1989666813A10C9D224 /* Resources */ = {
@@ -138,6 +171,7 @@
 				21C1B94BA0F700BAB338310F /* Sources */,
 				40E2C0BD5A0070B94CD5A46C /* Frameworks */,
 				DC721021C97543D5DC94D0E1 /* Products */,
+				61CB9FC1E0BBF0AD63CC98DB /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -156,17 +190,18 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 968739CA8A8D655CFBAA73ED /* Build configuration list for PBXNativeTarget "LegacyApp" */;
 			buildPhases = (
+				E7CAF027C625B5A294B278E1 /* [CP] Check Pods Manifest.lock */,
+				65B2F5595B1A6FDA5BA461E9 /* [CP-User] Run Flutter Build legacyapp_flutter Script */,
 				27209C1A69CC003B2C583B45 /* Sources */,
 				6A864511787BC449FA698FF1 /* Resources */,
 				94079FE719FD805B820A3796 /* Frameworks */,
+				41FD55420D20A32E4A95AB82 /* [CP-User] Embed Flutter Build legacyapp_flutter Script */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = LegacyApp;
-			packageProductDependencies = (
-			);
 			productName = LegacyApp;
 			productReference = 50448BA1D9D163FF25E44FA3 /* LegacyApp.app */;
 			productType = "com.apple.product-type.application";
@@ -214,6 +249,51 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		41FD55420D20A32E4A95AB82 /* [CP-User] Embed Flutter Build legacyapp_flutter Script */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "[CP-User] Embed Flutter Build legacyapp_flutter Script";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nset -u\nsource \"${SRCROOT}/../legacyapp_flutter/.ios/Flutter/flutter_export_environment.sh\"\nexport VERBOSE_SCRIPT_LOGGING=1 && \"$FLUTTER_ROOT\"/packages/flutter_tools/bin/xcode_backend.sh embed_and_thin";
+		};
+		65B2F5595B1A6FDA5BA461E9 /* [CP-User] Run Flutter Build legacyapp_flutter Script */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "[CP-User] Run Flutter Build legacyapp_flutter Script";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nset -u\nsource \"${SRCROOT}/../legacyapp_flutter/.ios/Flutter/flutter_export_environment.sh\"\nexport VERBOSE_SCRIPT_LOGGING=1 && \"$FLUTTER_ROOT\"/packages/flutter_tools/bin/xcode_backend.sh build";
+		};
+		E7CAF027C625B5A294B278E1 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-LegacyApp-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		27209C1A69CC003B2C583B45 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -226,10 +306,15 @@
 				249EFC3735BB1FD618F4D9E3 /* ConfirmViewController.m in Sources */,
 				3D3FF094F594DAFB52674EC4 /* FavoritesDatabase.m in Sources */,
 				3E789D5B26553A9A87D9F810 /* FavoritesStore.m in Sources */,
+				073EC65D2E612CC197099075 /* FeatureFlags.swift in Sources */,
+				1074F902A70CF63F7147099E /* FlutterHost.swift in Sources */,
+				3C55DD5AA2FD25F1344292DC /* FlutterScreenViewController.swift in Sources */,
 				59B784FDBD0B5514721D9EF9 /* FormData.m in Sources */,
 				425F59F025702BDEEB667273 /* InputViewController.m in Sources */,
 				DB675B883D9FD91CA1F162BA /* ItunesTrack.m in Sources */,
 				3B43E73240E57BC4A503FA4B /* MusicViewController.m in Sources */,
+				594FE13879C612C5FBE43B0F /* NativeRouter.swift in Sources */,
+				DB4F5042976E3091E77E28E4 /* NativeServices.swift in Sources */,
 				98C581105D58D2CEF6BE57C8 /* SceneDelegate.m in Sources */,
 				5CF3D60B82590575CE306265 /* TrackDetailViewController.m in Sources */,
 				513E617B58E5B5527B636A17 /* TrackTableViewCell.m in Sources */,
@@ -254,7 +339,9 @@
 /* Begin XCBuildConfiguration section */
 		8473383DDCDEB7E458D460CA /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 456E644964DEC67A6C1D9516 /* Pods-LegacyApp.debug.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -268,13 +355,17 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.legacyapp;
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "LegacyApp/Sources/LegacyApp-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
 		879768658600B502B95333D9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BA7E117EC2EAA09012EB45E6 /* Pods-LegacyApp.release.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -288,6 +379,8 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.legacyapp;
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "LegacyApp/Sources/LegacyApp-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

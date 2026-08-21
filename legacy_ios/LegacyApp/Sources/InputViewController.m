@@ -1,5 +1,6 @@
 #import "InputViewController.h"
 #import "ConfirmViewController.h"
+#import "LegacyApp-Swift.h"
 
 static NSString *const kPrefsDraftName = @"draft_name";
 static NSString *const kPrefsDraftEmail = @"draft_email";
@@ -130,8 +131,12 @@ static NSString *const kPrefsDraftMessage = @"draft_message";
     data.email = self.emailField.text ?: @"";
     data.message = self.messageField.text ?: @"";
 
-    ConfirmViewController *confirmVC = [[ConfirmViewController alloc] init];
-    [self.navigationController pushViewController:confirmVC animated:YES];
+    // 確認画面がネイティブ実装かFlutter実装かはNativeRouterが決める。
+    // 呼び出し側はフラグを見ない。
+    UIViewController *next = [NativeRouter viewControllerFor:NativeRouter.screenConfirm];
+    if (next != nil) {
+        [self.navigationController pushViewController:next animated:YES];
+    }
 }
 
 @end

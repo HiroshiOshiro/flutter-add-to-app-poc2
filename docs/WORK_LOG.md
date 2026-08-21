@@ -304,3 +304,146 @@ adb shell run-as com.example.legacyapp \
 
 `run-as` のシェル内で `mkdir -p shared_prefs && cp ...` のように複合コマンドを
 書くと `mkdir: Needs 1 argument` になる。`run-as` は単一コマンドとして扱う。
+
+## Phase 0-3: iOS側の土台
+
+### CocoaPodsの配線
+
+`Podfile` を新規作成し、Flutterモジュールの `.ios/Flutter/podhelper.rb` を
+`load` して `install_all_flutter_pods` を呼ぶ。`post_install` に
+`flutter_post_install(installer)` を書かないと `pod install` が
+`Missing flutter_post_install(installer) in Podfile post_install block`
+で失敗する。
+
+XcodeGenでプロジェクトを生成しているため、順序を守る必要がある。
+
+```
+project.yml を変更 -> xcodegen generate -> pod install -> .xcworkspace でビルド
+```
+
+`xcodegen generate` はCocoaPodsが `.pbxproj` に注入したビルドフェーズを消して
+しまうため、必ず `pod install` を後に実行する。ビルドは `.xcodeproj` ではなく
+`.xcworkspace` に対して行う。
+
+### Objective-CとSwiftの相互運用
+
+Flutter統合のために新規に書くコードはSwiftにする。既存のObjective-Cと
+双方向に参照するため、`project.yml` に3つの設定を足した。
+
+| 設定 | 用途 |
+|---|---|
+| `SWIFT_VERSION` | Swiftを含むターゲットに必要 |
+| `SWIFT_OBJC_BRIDGING_HEADER` | Swiftから既存のObjective-C型を参照する |
+| `ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES` | Swiftファイルを1つでも追加する場合に有効化 |
+
+逆向き（Objective-Cから新規のSwiftクラスを参照する）は、自動生成される
+`LegacyApp-Swift.h` をimportするだけでよく、個別のヘッダーは不要。
+`InputViewController.m` はこれをimportして `NativeRouter` を呼んでいる。
+
+### ネイティブ側のクラス構成
+
+Android側と1対1で対応させた。
+
+```
+FlutterHost.swift                FlutterEngineGroupの保持とViewControllerの生成
+FlutterScreenViewController.swift  Flutter画面を表示する唯一のViewController
+NativeRouter.swift               論理的な画面名 -> ネイティブ実装かFlutter実装かの判断
+NativeServices.swift             機能単位のMethodChannelハンドラ
+FeatureFlags.swift               画面ごとのFlutter有効/無効
+```
+
+`InputViewController.m` は
+`[[ConfirmViewController alloc] init]` を直接作るのをやめ、
+`[NativeRouter viewControllerFor:NativeRouter.screenConfirm]` を呼ぶだけに
+なった。Android側の `MemoFragment` と同じ形。
+
+### つまずいた点1: `FlutterEngineGroup.Options` はSwiftから使えない
+
+`FlutterEngineGroup` にオプションを渡す形で書いたところ
+
+```
+error: type 'FlutterEngineGroup' has no member 'Options'
+```
+
+になった。ヘッダーを確認すると、オプション型は `FlutterEngineGroup` の
+ネストした型ではなく `FlutterEngineGroupOptions` という独立したクラスで、
+Swiftにもその名前で入ってくる。今回は初期ルートしか指定しないため、
+オプションを使わない方のAPIにした。
+
+```swift
+let engine = engineGroup.makeEngine(
+    withEntrypoint: nil,   // nil で main() が使われる
+    libraryURI: nil,
+    initialRoute: route
+)
+```
+
+### つまずいた点2: `GeneratedPluginRegistrant` は別モジュール
+
+```
+error: cannot find 'GeneratedPluginRegistrant' in scope
+```
+
+`import Flutter` だけでは見つからない。`GeneratedPluginRegistrant` は
+`FlutterPluginRegistrant` という別のPod／モジュールにあるため、
+`import FlutterPluginRegistrant` が必要。
+
+### つまずいた点3: 起動中のシミュレータが複数あると `booted` が別端末を指す
+
+ビルドしたアプリを `xcrun simctl install booted` でインストールしたのに、
+画面には**先行リポジトリのアプリ**が表示され続けた。原因はシミュレータが
+3台起動していたことで、`booted` はそのうちの1台（画面に出していない端末）を
+指していた。
+
+```bash
+xcrun simctl list devices booted   # 起動中の端末を確認する
+```
+
+インストール先とスクリーンショットを撮る端末が一致しているかは、UDIDを
+明示して確かめるのが確実。ビルドしたバイナリのサイズ・タイムスタンプを
+インストール先のものと突き合わせると、取り違えにすぐ気づける。
+
+### ナビゲーションバーの二重表示
+
+Flutter側の `Scaffold` が自前でAppBarを描くため、ホストの
+`UINavigationController` のバーをそのまま出すと二重になる。
+`FlutterScreenViewController` の `viewWillAppear` / `viewWillDisappear` で
+バーの表示を切り替えている。Androidの `FlutterTheme`（NoActionBar）と
+同じ問題への対処。
+
+### 検証
+
+シミュレータで両方の経路を確認した。
+
+| フラグ | 結果 |
+|---|---|
+| OFF（既定） | 従来通りネイティブ（UIKit）の確認画面が開く。**移行前の挙動が変わっていない** |
+| ON | Flutter画面が開き、`No Flutter screen is registered for "/confirm"` が表示される |
+
+**フラグの切り替え方（動作確認用）。** iOSでは
+`xcrun simctl spawn <udid> defaults write <bundle id> ...` はアプリの
+コンテナには書き込まれない。コンテナ内のplistを直接作る。
+
+```bash
+xcrun simctl terminate <udid> com.example.legacyapp
+C=$(xcrun simctl get_app_container <udid> com.example.legacyapp data)
+/usr/libexec/PlistBuddy -c "Add :feature_flag.screen_confirm bool true" \
+  "$C/Library/Preferences/com.example.legacyapp.plist"
+xcrun simctl launch <udid> com.example.legacyapp
+```
+
+## Phase 0 のまとめ
+
+Android・iOSの両方で、次の経路が通っている。
+
+```
+ネイティブの画面 -> NativeRouter -> FeatureFlags
+  -> FlutterHost（EngineGroupからエンジン生成・初期ルートを指定）
+  -> Flutter表示用の共通コンテナ -> Dart側 main() -> AppRouter
+  -> （まだ画面が未登録なのでフォールバック）
+```
+
+Flutter化した画面は0件だが、**土台はすべて揃っている**。Phase 1 で行うのは
+Dart側にConfirm画面を実装して登録表に1行足すことだけで、**ネイティブ側の
+コードには手を入れない**見込み。それが実際に成立するかどうかが、この構成が
+狙い通りかを判定する基準になる。
