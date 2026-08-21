@@ -258,3 +258,142 @@ Android Studio 同梱の JDK 21）だった。ホストアプリの `compileOpti
 満たしているつもりで着手したのに、3回ビルドが失敗する」体験になるため、
 **バージョン要求はFlutter SDKのバージョンに紐づくことを明記し、確認手順を
 先頭に置くべき**。
+
+---
+
+## Step 3: ガイド「6. ステップ3: Flutter画面を表示する」（Android）
+
+### 3-1. Manifestスニペットをそのまま貼る
+
+ガイドのスニペットを一字一句そのまま貼った。
+
+```xml
+<activity
+  android:name="io.flutter.embedding.android.FlutterActivity"
+  android:theme="@style/LaunchTheme"
+  ... />
+```
+
+```
+$ ./gradlew assembleDebug
+ERROR: .../AndroidManifest.xml:33:9-39:13: AAPT: error: resource
+style/LaunchTheme (aka com.example.legacyapp:style/LaunchTheme) not found.
+```
+
+**判定: ガイドが誤り。** `@style/LaunchTheme` は**Flutterが新規アプリを作った
+ときに生成するテーマ**であり、既存のネイティブアプリには存在しない。
+add-to-app のガイドとして、このスニペットをそのまま貼れば必ず失敗する。
+テーマを自分で用意する必要があることと、その定義を載せるべき。
+
+ホストアプリ既存の `@style/AppTheme` に差し替えて解消。
+
+### 3-2. FlutterEngineGroup の起動コードが無い
+
+ガイドは
+
+> **`FlutterEngineGroup` を既定にしてよい。**
+
+と書いているが、**Androidの起動コードとして載っているのは「新規エンジン」と
+「キャッシュエンジン」の2つだけで、EngineGroup のスニペットが無い。**
+公式APIを自分で調べて書く必要があった。
+
+```java
+FlutterEngineGroup group = new FlutterEngineGroup(requireContext());
+FlutterEngine engine = group.createAndRunEngine(
+        requireContext(),
+        DartExecutor.DartEntrypoint.createDefault(),
+        "/confirm");
+FlutterEngineCache.getInstance().put(FLUTTER_ENGINE_ID, engine);
+return FlutterActivity.withCachedEngine(FLUTTER_ENGINE_ID).build(requireContext());
+```
+
+**判定: ガイドに不足あり。** 推奨している方式のコードが載っていないのは
+致命的。上記スニペットを追加すべき。
+
+なお、EngineGroupから作ったエンジンは `FlutterEngineCache` に入れて
+`withCachedEngine` で起動する、という**2つの仕組みの組み合わせ**になる点も
+ガイドからは読み取れない。
+
+### 3-3. スニペットがKotlinのみ
+
+ガイドのAndroid側スニペットはすべてKotlinだが、**ホストアプリはJava**。
+今回はJavaに書き換えて対応した。ガイドはKotlinを推奨しているものの、
+Android統合の節にKotlinプラグインを有効化する手順が無いため、Kotlinで書くには
+読者が自分でGradleを設定する必要がある。
+
+**判定: ガイドに不足あり。** Kotlinで書くなら有効化手順を、書かないなら
+Javaのスニペットも載せるべき。
+
+### 3-4. 初期ルートの分割（検証点E）
+
+ガイドの対処（`onGenerateInitialRoutes`）を**意図的に入れずに**実装して確認。
+
+| 操作 | 結果 |
+|---|---|
+| Flutter画面を開く | `route: /confirm` が表示される。**AppBarに戻る矢印が出る** |
+| 戻る操作 | ネイティブに戻らず `route: /` が表示される |
+
+**判定: ガイドの記述は正しい。再現した。**
+
+ただしガイドに書かれていない症状が1つある。**画面スタックが2つになるため、
+Flutter側のAppBarに意図しない戻る矢印が表示される。** 戻る操作をする前に
+気づける手がかりなので、ガイドに追記する価値がある。
+
+対処を適用した結果:
+
+| 操作 | 結果 |
+|---|---|
+| Flutter画面を開く | `route: /confirm`。**戻る矢印は出ない** |
+| 戻る操作 | `MainActivity`（ネイティブ）に戻る |
+
+### 3-5. AppBarの二重表示（検証点F）
+
+**再現しなかった。** 2種類のテーマで試した。
+
+| Flutter画面に当てたテーマ | 結果 |
+|---|---|
+| `Theme.MaterialComponents.Light.DarkActionBar`（AppCompat系） | 二重表示なし |
+| `@android:style/Theme.Material.Light.DarkActionBar`（framework系） | 二重表示なし |
+
+**判定: ガイドが誤り、または条件が不足。** `FlutterActivity` を使う限り、
+ActionBar付きのテーマを当てても二重表示は起きなかった。ガイドの警告は
+`FlutterFragment` をActionBarを描くActivityに埋め込む場合の話である可能性が
+高い（今回は未検証）。**`FlutterActivity` の話として書くのは誤りなので、
+条件を限定するか削除する。**
+
+### 3-6. 到達点
+
+```
+--- Flutter画面 ---
+  ACTIVITY com.example.legacyapp/io.flutter.embedding.android.FlutterActivity
+--- 戻る操作の後 ---
+  ACTIVITY com.example.legacyapp/.MainActivity
+```
+
+ネイティブ画面のボタンからFlutter画面が開き、初期ルートが渡り、戻る操作で
+ネイティブに戻るところまで到達した。
+
+### 3-7. 作業中に踏んだ罠（ガイドの範囲外だが記録）
+
+**`adb install -r` が `INSTALL_FAILED_INSUFFICIENT_STORAGE` で失敗する。**
+FlutterのDebug APKは1.4GBあり、上書きインストールに失敗する。エラーは
+`-r` を付けていると見落としやすく、**古いAPKのまま動作確認して「修正が
+効いていない」と誤判断しかけた**（今回2回発生）。
+
+```
+adb: failed to install app-debug.apk:
+  Failure [INSTALL_FAILED_INSUFFICIENT_STORAGE: Failed to override installation location]
+```
+
+`adb uninstall` してから `adb install` すれば通る。READMEの実行手順に注記を
+入れる。
+
+### Step 3 のまとめ
+
+| 検証点 | 結果 |
+|---|---|
+| Manifestスニペット | **ガイドが誤り**（存在しないテーマを参照） |
+| EngineGroup の起動コード | **ガイドに不足**（推奨方式のコードが無い） |
+| スニペットの言語 | **ガイドに不足**（Kotlinのみ／有効化手順が無い） |
+| 初期ルートの分割（E） | **ガイドは正しい**。症状（戻る矢印）を追記すべき |
+| AppBarの二重表示（F） | **ガイドが誤り**。`FlutterActivity` では再現しない |

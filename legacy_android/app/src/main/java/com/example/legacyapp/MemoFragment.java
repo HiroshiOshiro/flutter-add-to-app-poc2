@@ -1,6 +1,12 @@
 package com.example.legacyapp;
 
 import android.content.Intent;
+
+import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngineCache;
+import io.flutter.embedding.engine.FlutterEngineGroup;
+import io.flutter.embedding.engine.dart.DartExecutor;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
@@ -66,7 +72,7 @@ public class MemoFragment extends Fragment {
             BaseActivity.sFormData.name = nameEdit.getText().toString();
             BaseActivity.sFormData.email = emailEdit.getText().toString();
             BaseActivity.sFormData.message = messageEdit.getText().toString();
-            startActivity(new Intent(requireContext(), ConfirmActivity.class));
+            startActivity(newFlutterConfirmIntent());
         });
     }
 
@@ -92,5 +98,19 @@ public class MemoFragment extends Fragment {
                 .putString(KEY_EMAIL, emailEdit.getText().toString())
                 .putString(KEY_MESSAGE, messageEdit.getText().toString())
                 .apply();
+    }
+
+    // ガイド「6. ステップ3」は FlutterEngineGroup を既定として推奨しているが、
+    // その起動コードのスニペットが載っていないため、公式APIから自分で書いた。
+    private static final String FLUTTER_ENGINE_ID = "legacyapp_engine";
+
+    private Intent newFlutterConfirmIntent() {
+        FlutterEngineGroup group = new FlutterEngineGroup(requireContext());
+        FlutterEngine engine = group.createAndRunEngine(
+                requireContext(),
+                DartExecutor.DartEntrypoint.createDefault(),
+                "/confirm");
+        FlutterEngineCache.getInstance().put(FLUTTER_ENGINE_ID, engine);
+        return FlutterActivity.withCachedEngine(FLUTTER_ENGINE_ID).build(requireContext());
     }
 }
