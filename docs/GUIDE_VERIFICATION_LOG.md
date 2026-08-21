@@ -557,3 +557,105 @@ Androidと同じ到達点。
 | iOS側のコードスニペット | **ガイドに不足**（1行も無い） |
 | importするモジュール名 | **ガイドに不足**（`Flutter` と `FlutterPluginRegistrant`） |
 | ObjC→Swiftの参照 | **ガイドが誤り**（Bridging Header か `public` が必要） |
+
+---
+
+## Step 5: ガイド「8. ステップ5: デバッグ」
+
+### ガイドの記述
+
+> アプリを起動してFlutter画面を表示した状態で **`flutter attach`** する。
+
+> **`flutter attach` によるホットリロード／DevToolsにはローカルネットワーク権限が
+> 必要**で、これが無いとデバッグ時に接続できない。
+
+### 5-1. Android: 自動探索で接続できた
+
+```
+$ flutter attach -d emulator-5554
+A Dart VM Service on sdk gphone64 arm64 is available at: http://127.0.0.1:49652/...
+The Flutter DevTools debugger and profiler ... is available at: ...
+```
+
+**判定: ガイドの記述通り。OK。**
+
+### 5-2. iOS: 自動探索では接続できなかった（検証点H）
+
+権限を入れずに実行:
+
+```
+$ flutter attach -d <simulator udid>
+Waiting for a connection from Flutter on iPhone 16e...
+```
+
+60秒以上待っても接続しない。ガイド通り `NSBonjourServices` と
+`NSLocalNetworkUsageDescription` を追加して再ビルド・再インストールしたが、
+**結果は変わらず `Waiting for a connection` のままだった。**
+
+シミュレータのログを見ると、VMサービス自体は起動していた。
+
+```
+$ xcrun simctl spawn <udid> log show --last 3m --predicate '...'
+LegacyApp (Flutter) flutter: The Dart VM service is listening on
+  http://127.0.0.1:65135/AHGlBZAIIvs=/
+```
+
+URLを直接渡すと接続できた。
+
+```
+$ flutter attach -d <udid> --debug-url "http://127.0.0.1:65135/AHGlBZAIIvs=/"
+r Hot reload. 🔥🔥🔥
+A Dart VM Service on iPhone 16e is available at: http://127.0.0.1:65319/...
+```
+
+**判定: ガイドが不十分。** ローカルネットワーク権限を入れても
+自動探索は成功しなかった。少なくともこの環境（Xcode 26.6 / iOS 26.2
+シミュレータ / Flutter 3.47.1）では、**VMサービスのURLをデバイスログから拾って
+`--debug-url` で渡す**必要がある。ガイドにこの回避策を書くべき。
+
+権限が本当に不要だったのかは切り分けられていない。**権限なしでも
+`--debug-url` なら繋がるのかは未検証**であり、「権限は不要」と結論づけては
+いけない。
+
+### 5-3. ホットリロードが画面に反映されない
+
+両OSで同じ現象が出た。
+
+| 操作 | ツールの出力 | 画面 |
+|---|---|---|
+| ホットリロード（SIGUSR1） | `Reloaded 1 of 754 libraries` | **変わらない** |
+| ホットリスタート（SIGUSR2） | `Restarted application` | **反映される** |
+
+const・非constの両方を同時に変更して確かめたが、**どちらもホットリロードでは
+反映されなかった**（当初はconstの問題かと考えたが違った）。
+
+Step 3 の時点、および `main` ブランチの実装では**ホットリロードが反映されて
+いた**。違いは画面の作り方にある。
+
+| 反映される | 反映されない |
+|---|---|
+| `builder: (_) => UnknownRouteScreen(...)`（Widgetクラス） | `builder: (_) => Scaffold(...)`（インラインのクロージャ） |
+
+**判定: ガイドに不足あり。** 「ホットリロードが使える」とだけ書いてあるが、
+**ルートの画面をインラインのクロージャで組むとホットリロードが効かない**。
+画面はWidgetクラスとして切り出す、と書き添える価値がある。効かないときは
+ホットリスタートで確認する、という逃げ道も併記する。
+
+### 5-4. `--pid-file` + シグナル
+
+```
+$ flutter attach -d <device> --pid-file=/tmp/flutter.pid
+$ kill -SIGUSR1 $(cat /tmp/flutter.pid)   # ホットリロード
+$ kill -SIGUSR2 $(cat /tmp/flutter.pid)   # ホットリスタート
+```
+
+**判定: ガイドの記述通り。両OSで動作した。**
+
+### Step 5 のまとめ
+
+| 検証点 | 結果 |
+|---|---|
+| Android の `flutter attach` | **OK**（自動探索で接続） |
+| iOS の `flutter attach`（H） | **ガイドが不十分**。権限を入れても自動探索は失敗。`--debug-url` が必要だった |
+| ホットリロード | **ガイドに不足**。画面をインラインのクロージャで組むと効かない |
+| `--pid-file` + シグナル | **OK** |

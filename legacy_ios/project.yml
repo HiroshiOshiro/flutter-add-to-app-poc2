@@ -57,6 +57,12 @@ targets:
       properties:
         CFBundleDisplayName: LegacyApp
         CFBundleLocalizations: [ja, en]
+        # ガイド「Debugビルドにローカルネットワーク権限を追加する」。
+        # これが無いと flutter attach が接続できない。
+        # 本来はDebug構成にだけ入れる（後述の課題を参照）。
+        NSBonjourServices:
+          - _dartVmService._tcp
+        NSLocalNetworkUsageDescription: Allows Flutter debugging and hot reload
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
