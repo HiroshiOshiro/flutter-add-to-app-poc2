@@ -1,8 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:legacyapp_flutter/core/channels/legacy_store_channel.dart';
-import 'package:legacyapp_flutter/core/channels/navigation_channel.dart';
+import 'package:legacyapp_flutter/data/services/legacy_store_service.dart';
+import 'package:legacyapp_flutter/data/services/navigation_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -20,14 +20,14 @@ void main() {
 
   setUp(() => calls = <MethodCall>[]);
 
-  group('NavigationChannel', () {
+  group('NavigationService', () {
     const MethodChannel channel =
-        MethodChannel(NavigationChannel.channelName);
+        MethodChannel(NavigationService.channelName);
 
     test('openNative sends the route and arguments', () async {
       handle(channel, (_) => null);
 
-      await const NavigationChannel(channel)
+      await const NavigationService(channel)
           .openNative('complete', arguments: <String, Object?>{'id': 1});
 
       expect(calls.single.method, 'openNative');
@@ -40,7 +40,7 @@ void main() {
     test('openNative omits arguments when there are none', () async {
       handle(channel, (_) => null);
 
-      await const NavigationChannel(channel).openNative('complete');
+      await const NavigationService(channel).openNative('complete');
 
       expect(calls.single.arguments, <String, Object?>{'route': 'complete'});
     });
@@ -48,21 +48,21 @@ void main() {
     test('close asks the native container to close', () async {
       handle(channel, (_) => null);
 
-      await const NavigationChannel(channel).close();
+      await const NavigationService(channel).close();
 
       expect(calls.single.method, 'close');
     });
   });
 
-  group('LegacyStoreChannel', () {
+  group('LegacyStoreService', () {
     const MethodChannel channel =
-        MethodChannel(LegacyStoreChannel.channelName);
+        MethodChannel(LegacyStoreService.channelName);
 
     test('readStrings returns the values the native side reports', () async {
       handle(channel, (_) => <Object?, Object?>{'draft_name': 'Taro'});
 
       final Map<String, String> values =
-          await const LegacyStoreChannel(channel)
+          await const LegacyStoreService(channel)
               .readStrings(<String>['draft_name', 'draft_email']);
 
       expect(calls.single.method, 'readStrings');
@@ -76,7 +76,7 @@ void main() {
       handle(channel, (_) => null);
 
       final Map<String, String> values =
-          await const LegacyStoreChannel(channel).readStrings(<String>['x']);
+          await const LegacyStoreService(channel).readStrings(<String>['x']);
 
       expect(values, isEmpty);
     });

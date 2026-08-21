@@ -1,10 +1,10 @@
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'app/app.dart';
-import 'app/route_table.dart';
+import 'routing/router.dart';
+import 'ui/core/themes/app_theme.dart';
 
 /// アプリ唯一のDartエントリポイント。
 ///
@@ -21,10 +21,34 @@ void main() {
 
   runApp(
     ProviderScope(
-      child: App(
+      child: MainApp(
         initialRoute: PlatformDispatcher.instance.defaultRouteName,
-        routes: buildAppRoutes(),
+        router: AppRouter(registeredScreens()),
       ),
     ),
   );
+}
+
+/// Flutter側のアプリシェル。
+class MainApp extends StatelessWidget {
+  const MainApp({
+    super.key,
+    required this.initialRoute,
+    required this.router,
+  });
+
+  /// ネイティブから渡された初期ルート。
+  final String initialRoute;
+
+  final AppRouter router;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      initialRoute: initialRoute,
+      onGenerateRoute: router.onGenerateRoute,
+    );
+  }
 }

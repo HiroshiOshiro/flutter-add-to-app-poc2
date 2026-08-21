@@ -65,26 +65,54 @@ flutter create --template module --org com.example --project-name legacyapp_flut
 
 ### ディレクトリ構成
 
+[公式のアーキテクチャガイド](https://docs.flutter.dev/app-architecture/guide)
+の構成に従う。
+
 ```
 lib/
-  main.dart                  唯一のエントリポイント
-  app/
-    app.dart                 アプリシェル・ルーティング
-    routes.dart              ルート名の定義
-    route_table.dart         Flutter化済み画面の登録表
-    theme.dart               共通テーマ
-  core/
-    channels/                機能単位のMethodChannel
-    logging/                 共通ロギング
-    network/                 共通APIクライアント
-  features/
-    <feature>/               feature単位でdomain/data/presentationを持つ
+  main.dart                   唯一のエントリポイント + アプリシェル
+  routing/
+    routes.dart               ルート名の定義
+    router.dart               Flutter化済み画面の登録表とルート解決
+  ui/
+    core/
+      themes/                 共通テーマ
+      ui/                     複数featureで使う共通Widget
+    <feature>/
+      view_models/            画面の状態とロジック
+      widgets/                画面のWidget
+  domain/
+    models/                   UI層・データ層の両方が使うモデル
+  data/
+    repositories/             データの単一の情報源
+    services/                 外部API・プラットフォーム呼び出しのラップ
+  utils/                      ロギングなどの補助
 ```
 
+ガイドの分類では**UI層はfeature単位、データ層は種類単位**で整理する。
+Repository と Service は複数のfeatureから再利用されるため種類でまとめ、
+View と ViewModel は1対1で対応するためfeatureでまとめる、という考え方。
+
 先行リポジトリは `lib/domain` `lib/data` `lib/presentation` をトップレベルに
-置いていた。画面が1〜2個なら見通しが良いが、featureが増えると各レイヤーの
-ディレクトリに無関係なファイルが混ざっていく。全面移行を前提にするなら、
-**レイヤーはfeatureの中に持つ**方が破綻しない。
+置き、UI層もfeatureで分けていなかった。画面が1〜2個なら見通しが良いが、
+featureが増えると `presentation/` に無関係な画面が並んでいく。
+
+**この構成には途中で切り替えた。** 最初はUI層もデータ層もfeature単位で
+まとめる構成（`lib/features/<name>/{domain,data,presentation}`）で書いたが、
+公式ガイドに合わせて上記へ作り直した。判断としては、独自の整理方針より
+公式ガイドに乗せた方が、後から参加する開発者が既存の知識をそのまま使える
+という理由が大きい。
+
+**MethodChannelのラッパーはServiceに置く。** ガイドはServiceを「外部APIや
+プラットフォーム呼び出しをラップし、状態を持たないクラス」と定義しており、
+MethodChannelのラッパーはこれに正確に該当する。当初 `core/channels/` という
+独自の置き場を作っていたが、`data/services/` に移して名前も
+`NavigationService` / `LegacyStoreService` に揃えた。
+
+**ViewModelはRiverpodの `Notifier` で実装する。** ガイドの例は
+`ChangeNotifier` を使っているが、ガイド自体は状態管理ライブラリを限定して
+いない。ViewModelの役割（Repositoryからデータを取得し、UIの状態として保持し、
+コマンドを公開する）はそのままに、実装をRiverpodの `Notifier` にする。
 
 ### 設計判断
 
@@ -107,7 +135,7 @@ Flutter化するときに触るのは `AppRoutes` へのルート名追加と登
 領域から出るときだけ**に限定する。Flutter化済みの画面同士の遷移はネイティブを
 経由しないため、画面が増えてもネイティブ⇔Flutterの境界は増えない。
 
-**3. MethodChannelは画面単位ではなく機能単位で切る。**
+**3. MethodChannel（=Service）は画面単位ではなく機能単位で切る。**
 先行リポジトリのチャンネル名は `com.example.legacyapp/confirm` で、画面名を
 含んでいた。画面が増えればチャンネルとハンドラも増える。
 
@@ -115,8 +143,8 @@ Flutter化するときに触るのは `AppRoutes` へのルート名追加と登
 
 | チャンネル | 役割 | 移行完了時 |
 |---|---|---|
-| `…/navigation` | Flutterの領域から出る遷移をネイティブへ依頼 | 消える |
-| `…/legacy_store` | ネイティブが保存済みのローカルデータを読む | 消える |
+| `…/navigation` | Flutterの領域から出る遷移をネイティブへ依頼（`NavigationService`） | 消える |
+| `…/legacy_store` | ネイティブが保存済みのローカルデータを読む（`LegacyStoreService`） | 消える |
 
 画面が増えてもチャンネルは増えず、**機能がFlutterへ移るたびに減っていく**。
 これが全面移行では正しい方向になる。認証・共通ヘッダが必要になった場合は
@@ -124,7 +152,8 @@ Flutter化するときに触るのは `AppRoutes` へのルート名追加と登
 （使われない抽象を先に作らない）。
 
 **4. 共通基盤は最初からDart側に置く。**
-テーマ・ロギング・APIクライアントを `core/` にDartで実装した。既存の通信基盤を
+テーマ（`ui/core/themes`）・ロギング（`utils`）・APIクライアント
+（`data/services`）をDartで実装した。既存の通信基盤を
 ネイティブに温存してMethodChannelで呼ぶ作りは、そのブリッジを全画面が使う
 ことになり捨てコードが最大化する。移行の初期は過剰投資に見えるが、3画面目
 以降で回収できる。

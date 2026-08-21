@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:legacyapp_flutter/app/app.dart';
-import 'package:legacyapp_flutter/app/routes.dart';
+import 'package:legacyapp_flutter/main.dart';
+import 'package:legacyapp_flutter/routing/router.dart';
+import 'package:legacyapp_flutter/routing/routes.dart';
 
 void main() {
   Widget screen(String label) => Scaffold(body: Text(label));
 
   testWidgets('shows the screen registered for the initial route',
       (tester) async {
-    await tester.pumpWidget(App(
+    await tester.pumpWidget(MainApp(
       initialRoute: AppRoutes.confirm,
-      routes: <String, WidgetBuilder>{
+      router: AppRouter(<String, WidgetBuilder>{
         AppRoutes.confirm: (_) => screen('confirm screen'),
-      },
+      }),
     ));
     await tester.pumpAndSettle();
 
@@ -24,9 +25,9 @@ void main() {
       (tester) async {
     const String next = '/next';
 
-    await tester.pumpWidget(App(
+    await tester.pumpWidget(MainApp(
       initialRoute: AppRoutes.confirm,
-      routes: <String, WidgetBuilder>{
+      router: AppRouter(<String, WidgetBuilder>{
         AppRoutes.confirm: (context) => Scaffold(
               body: TextButton(
                 onPressed: () => Navigator.of(context).pushNamed(next),
@@ -34,7 +35,7 @@ void main() {
               ),
             ),
         next: (_) => screen('next screen'),
-      },
+      }),
     ));
     await tester.pumpAndSettle();
 
@@ -46,9 +47,9 @@ void main() {
 
   testWidgets('falls back to a visible message for an unregistered route',
       (tester) async {
-    await tester.pumpWidget(const App(
+    await tester.pumpWidget(const MainApp(
       initialRoute: '/not-registered',
-      routes: <String, WidgetBuilder>{},
+      router: AppRouter(<String, WidgetBuilder>{}),
     ));
     await tester.pumpAndSettle();
 

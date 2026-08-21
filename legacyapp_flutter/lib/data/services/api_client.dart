@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../logging/logger.dart';
+import '../../utils/logger.dart';
 
 /// 通信の共通入口。
 ///

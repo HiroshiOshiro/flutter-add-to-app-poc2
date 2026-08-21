@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 
-/// 移行前のネイティブコードが保存したローカルデータを読むためのチャンネル。
+/// 移行前のネイティブコードが保存したローカルデータを読むためのService。
 ///
 /// Flutterのキーバリューストア用プラグインは、既定では全キーに専用の
 /// プレフィックスを付け、Androidでは保存先ファイルもFlutter専用のものに
@@ -12,8 +12,8 @@ import 'package:flutter/services.dart';
 /// そのため移行期間中は「所有者はネイティブのまま、Flutterは読むだけ」と
 /// 決め、その受け渡しをこのチャンネル1本に集約する。Flutterへ完全に移した
 /// データはここから外していき、最終的にこのチャンネルごと消える。
-class LegacyStoreChannel {
-  const LegacyStoreChannel([
+class LegacyStoreService {
+  const LegacyStoreService([
     this._channel = const MethodChannel(channelName),
   ]);
 
