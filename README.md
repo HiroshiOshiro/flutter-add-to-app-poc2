@@ -12,6 +12,7 @@
 - `legacy_android/` — 移行前を模したAndroidアプリ（Java）
 - `legacy_ios/` — 移行前を模したiOSアプリ（Objective-C）
 - `legacyapp_flutter/` — Flutterモジュール（[公式アーキテクチャガイド](https://docs.flutter.dev/app-architecture/guide)の構成）
+- `docs/MIGRATION_GUIDE.md` — add-to-app の導入手順ガイド（一般化した内容）
 - `docs/WORK_LOG.md` — 作業ログ。設計判断の理由とつまずいた点
 
 ## 現在の状態（Phase 0 完了）
